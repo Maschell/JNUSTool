@@ -23,21 +23,23 @@ public class FST {
 
 	private void buildDirectory() {
 		 for(FEntry f : getFileEntries()){
-			 Directory current = directory; 
-			 int i = 0;
-			 for(String s :f.getPathList()){    			
-						
-				if(current.containsFolder(s)){    				
-					current = current.get(s);
-				}else{    				
-					Directory newDir = new Directory(s);
-					current.addFolder(newDir);
-					current = newDir;
-				}				
-				i++;
-				if(i==f.getPathList().size()){
-					current.addFile(f);
-				}    			
+			 if(!f.isDir() && f.isInNUSTitle()){
+				 Directory current = directory; 
+				 int i = 0;
+				 for(String s :f.getPathList()){    			
+							
+					if(current.containsFolder(s)){    				
+						current = current.get(s);
+					}else{    				
+						Directory newDir = new Directory(s);
+						current.addFolder(newDir);
+						current = newDir;
+					}				
+					i++;
+					if(i==f.getPathList().size()){
+						current.addFile(f);
+					}    			
+				 }
 			 }
 		 }
 		
