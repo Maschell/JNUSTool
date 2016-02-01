@@ -14,10 +14,36 @@ public class FST {
 	int totalEntries = 0;
 	int dirEntries = 0;
 	
+	private Directory directory = new Directory("root");
+	
 	public FST(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
 		parse(decrypteddata,tmd);
+		buildDirectory();
+	}	
+
+	private void buildDirectory() {
+		 for(FEntry f : getFileEntries()){
+			 Directory current = directory; 
+			 int i = 0;
+			 for(String s :f.getPathList()){    			
+						
+				if(current.containsFolder(s)){    				
+					current = current.get(s);
+				}else{    				
+					Directory newDir = new Directory(s);
+					current.addFolder(newDir);
+					current = newDir;
+				}				
+				i++;
+				if(i==f.getPathList().size()){
+					current.addFile(f);
+				}    			
+			 }
+		 }
+		
 	}
 	
+
 
 	private void parse(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
 		
@@ -99,7 +125,7 @@ public class FST {
 			this.totalContentSize += fileLength;
 			if(in_nus_title)this.totalContentSizeInNUS += fileLength;
 			
-			
+			List<String> pathList = new ArrayList<>();
 			//getting the full path of entry
 			if(dir)
 			{
@@ -114,20 +140,28 @@ public class FST {
 				StringBuilder sb = new StringBuilder();
 				int k = 0;
 				int nameoffoff,nameoff_entrypath;
+
 				for( j=0; j<level; ++j )
 				{
 					nameoffoff = Util.getIntFromBytes(decrypteddata,base_offset+Entry[j]*0x10);
 					k=0;
 					nameoff_entrypath = nameOff + nameoffoff;
 					while(decrypteddata[nameoff_entrypath + k] != 0){k++;}
-					sb.append(new String(Arrays.copyOfRange(decrypteddata,nameoff_entrypath, nameoff_entrypath + k)));
+					String tmpname = new String(Arrays.copyOfRange(decrypteddata,nameoff_entrypath, nameoff_entrypath + k));
+					if(!tmpname.equals("")){
+						pathList.add(tmpname);
+					}
+					
+					
+						
+					sb.append(tmpname);
 					sb.append("/");		
 				}
 				path = sb.toString();
 			}
 			
 			//add this to the List!
-			fileEntries.add(new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash));
+			fileEntries.add(new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList));
 			//System.out.println(fileEntries.get(i));
 		}
 		
@@ -218,4 +252,10 @@ public class FST {
 		}	
 		return i;
 	}
+
+	public Directory getDirectory() {
+		return directory;
+	}
+	
+	
 }

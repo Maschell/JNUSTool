@@ -1,3 +1,4 @@
+import java.util.List;
 
 public class FEntry {
 	
@@ -16,10 +17,11 @@ public class FEntry {
 	private long fileLength = 0;
 	private int contentID = 0;
 	private int NUScontentID = 0;
+	private List<String> pathList;
 
 	
 	public FEntry(String path, String filename, int contentID,int NUScontentID, long fileOffset, long fileLength, boolean dir,
-			boolean in_nus_title, boolean extract_withHash) {
+			boolean in_nus_title, boolean extract_withHash, List<String> pathList) {
 		setPath(path);
 		setFileName(filename);
 		setContentID(contentID);
@@ -29,7 +31,7 @@ public class FEntry {
 		setInNusTitle(in_nus_title);
 		setExtractWithHash(extract_withHash);
 		setNUScontentID(NUScontentID);
-		
+		setPathList(pathList);
 	}
 
 	public boolean isDir() {
@@ -117,6 +119,17 @@ public class FEntry {
 		Downloader.getInstance().download(this);
 		
 	}
+
+	public List<String> getPathList() {
+		return pathList;
+	}
+
+	public void setPathList(List<String> pathList) {
+		this.pathList = pathList;
+	}
+
+	
+	
 	
 	
 }

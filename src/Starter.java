@@ -6,6 +6,8 @@ import java.io.IOException;
 public class Starter {
 
 	public static void main(String[] args) {
+		System.out.println("JNUSTool 0.0.1 - pre alpha - by Maschell");
+		System.out.println();
 		try {
 			readConfig();		
 		} catch (IOException e) {
@@ -20,14 +22,15 @@ public class Starter {
 			if( args.length > 1 && args[1].length() == 32){
 				key = args[1].substring(0, 32);
 			}
-			new NUSTitle(titleID, key);
+			NUSGUI m = new NUSGUI(new NUSTitle(titleID, key));
+	        m.setVisible(true);			
 		}else{
 			System.out.println("Need parameters: TITLEID [KEY]");
 		}
 		
 	}
 
-	private static void readConfig() throws IOException {
+	public static void readConfig() throws IOException {
 		BufferedReader in = new BufferedReader(new FileReader(new File("config")));		
 		Downloader.URL_BASE =  in.readLine();		
 		Util.commonKey =  Util.hexStringToByteArray(in.readLine());

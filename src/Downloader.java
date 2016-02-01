@@ -29,8 +29,7 @@ public class Downloader {
 	    if(dlFileLength > (dlFileLength/BLOCKSIZE)*BLOCKSIZE){
 	    	dlFileLength = ((dlFileLength/BLOCKSIZE)*BLOCKSIZE) +BLOCKSIZE;	    	
 	    }
-	    
-	    fileOffset = ((fileOffset / BLOCKSIZE) * BLOCKSIZE);	    
+	   
 	    connection.setRequestProperty("Range", "bytes=" + fileOffset+"-");	    
 	    connection.connect();
 	    
@@ -235,17 +234,21 @@ public class Downloader {
 		String [] path = toDownload.getFullPath().split("/");
 	   
 	    String folder = String.format("%016X", titleID) +"/";
+	    File folder_ = null;
 	    for(int i = 0;i<path.length-1;i++){
-	    	if(!path[i].equals("")){
+	    	if(!path[i].equals("")){	    		
 	    		folder += path[i] + "/";
+	    		folder_ = new File(folder);
+	    	    if(!folder_.exists()){
+	    	    	folder_.mkdir();	    	    	
+	    	    }
 	    	}	    	
 	    }
-	    File folder_ = new File(folder);
-	    if(!folder_.exists()) folder_.mkdir();
 	    
+	  
 		try {
 			//if(toDownload.isExtractWithHash()){
-			if(path[1].equals("content")){
+			if(!path[1].equals("code") && toDownload.isExtractWithHash()){
 				downloadAndDecryptHash(URL,toDownload.getFileOffset(),toDownload.getFileLength(),toDownload,ticket);
 			}else{
 				downloadAndDecrypt(URL,toDownload.getFileOffset(),toDownload.getFileLength(),toDownload,ticket);
