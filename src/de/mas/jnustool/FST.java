@@ -1,9 +1,14 @@
+package de.mas.jnustool;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import de.mas.jnustool.util.Util;
+
 public class FST {
+	private TitleMetaData tmd;
 	long totalContentSize = 0L;
 	long totalContentSizeInNUS = 0L;
 	
@@ -14,35 +19,66 @@ public class FST {
 	int totalEntries = 0;
 	int dirEntries = 0;
 	
-	private Directory directory = new Directory("root");
+	private Directory FSTDirectory = new Directory("root");
 	
-	public FST(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
+	private Directory contentDirectory = new Directory("root");
+	
+	public FST(byte[] decrypteddata, TitleMetaData tmd) throws IOException {		
 		parse(decrypteddata,tmd);
-		buildDirectory();
+		setTmd(tmd);
+		buildDirectories();
 	}	
 
-	private void buildDirectory() {
-		 for(FEntry f : getFileEntries()){
+	private void buildDirectories() {
+	
+		 String contentfolder = "";
+		 Directory curContent = contentDirectory;
+		 for(FEntry f : getFileEntries()){			 
 			 if(!f.isDir() && f.isInNUSTitle()){
-				 Directory current = directory; 
+				 contentfolder = String.format("%08X",tmd.contents[f.getContentID()].ID);
+				 
+				 if(!contentDirectory.containsFolder(contentfolder)){
+						Directory newDir = new Directory(contentfolder);
+						contentDirectory.addFolder(newDir);
+				}
+				 curContent = contentDirectory.getFolder(contentfolder);
+				 
+				 Directory current = FSTDirectory; 
 				 int i = 0;
-				 for(String s :f.getPathList()){    			
-							
+				 
+				 for(String s :f.getPathList()){    
+					 i++;
+					 
+					//Content
+					if(curContent.containsFolder(s)){    				
+						curContent = curContent.get(s);
+					}else{    				
+						Directory newDir = new Directory(s);
+						curContent.addFolder(newDir);
+						curContent = newDir;
+					}				
+					if(i==f.getPathList().size()){
+						curContent.addFile(f);
+					}
+					
+						
+					//FST
 					if(current.containsFolder(s)){    				
 						current = current.get(s);
 					}else{    				
 						Directory newDir = new Directory(s);
 						current.addFolder(newDir);
 						current = newDir;
-					}				
-					i++;
+					}
 					if(i==f.getPathList().size()){
 						current.addFile(f);
-					}    			
+					}
 				 }
 			 }
 		 }
+		 
 		
+		 
 	}
 	
 
@@ -163,7 +199,7 @@ public class FST {
 			}
 			
 			//add this to the List!
-			fileEntries.add(new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList));
+			fileEntries.add(new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this));
 			//System.out.println(fileEntries.get(i));
 		}
 		
@@ -255,9 +291,24 @@ public class FST {
 		return i;
 	}
 
-	public Directory getDirectory() {
-		return directory;
+	public Directory getFSTDirectory() {
+		return FSTDirectory;
 	}
+	
+	public Directory getContentDirectory() {
+		return contentDirectory;
+	}
+	
+	
+
+	public TitleMetaData getTmd() {
+		return tmd;
+	}
+
+	public void setTmd(TitleMetaData tmd) {
+		this.tmd = tmd;
+	}
+
 	
 	
 }

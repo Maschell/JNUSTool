@@ -1,4 +1,10 @@
+package de.mas.jnustool;
+
 import java.io.IOException;
+
+import de.mas.jnustool.util.Decryption;
+import de.mas.jnustool.util.Downloader;
+import de.mas.jnustool.util.Util;
 
 public class NUSTitle {
 	private TitleMetaData tmd;
@@ -14,7 +20,7 @@ public class NUSTitle {
 			
 			tmd = new TitleMetaData(Downloader.getInstance().downloadTMDToByteArray());			
 				
-			if(key == null){
+			if(key == null){	
 				ticket = new TIK(Downloader.getInstance().downloadTicketToByteArray(),tmd.titleID);
 			}else{
 				ticket = new TIK(key,titleId);
@@ -27,7 +33,8 @@ public class NUSTitle {
 			byte[] encryptedFST = Downloader.getInstance().downloadContentToByteArray(tmd.contents[0].ID);
 			byte[] decryptedFST = decryption.decrypt(encryptedFST);
 			
-			fst = new FST(decryptedFST,tmd);			
+			fst = new FST(decryptedFST,tmd);
+			tmd.setFst(fst);
 			
 			System.out.println("Total Size of Content Files: " + ((int)((getTotalContentSize()/1024.0/1024.0)*100))/100.0 +" MB");
 			System.out.println("Total Size of Decrypted Files: " + ((int)((fst.getTotalContentSizeInNUS()/1024.0/1024.0)*100))/100.0 +" MB");

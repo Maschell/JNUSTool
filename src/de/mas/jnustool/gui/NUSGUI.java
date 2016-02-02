@@ -1,3 +1,5 @@
+package de.mas.jnustool.gui;
+
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,11 +13,16 @@ import javax.swing.JScrollPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
+import de.mas.jnustool.Settings;
+import de.mas.jnustool.FEntry;
+import de.mas.jnustool.NUSTitle;
+import de.mas.jnustool.TitleDownloader;
+
 public class NUSGUI extends JFrame {
 
     private static final long serialVersionUID = 4648172894076113183L;
 
-    public NUSGUI(NUSTitle nus) {
+    public NUSGUI(NUSTitle nus,Settings mode) {
         super();
         setSize(800, 600);
         getContentPane().setLayout(new BorderLayout(0, 0));

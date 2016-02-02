@@ -1,6 +1,11 @@
+package de.mas.jnustool;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import de.mas.jnustool.util.Decryption;
+import de.mas.jnustool.util.Util;
 
 public class TIK {
 		public static int KEY_LENGTH = 16;

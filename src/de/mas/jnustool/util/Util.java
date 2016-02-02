@@ -1,9 +1,12 @@
+package de.mas.jnustool.util;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Util {
-	static byte[] commonKey;
+	
+	public static byte[] commonKey;
 	
 	public static byte[] hexStringToByteArray(String s) {
 	    int len = s.length();

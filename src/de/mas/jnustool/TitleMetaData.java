@@ -1,7 +1,11 @@
+package de.mas.jnustool;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import de.mas.jnustool.util.Util;
 
 public class TitleMetaData {
 	int				signatureType;									// 0x000
@@ -23,6 +27,7 @@ public class TitleMetaData {
 	ContentInfo[] 	contentInfos		= 	new ContentInfo[64];	// 0x1E4
 	Content[] 		contents;										// 0x1E4 
 	
+	private FST fst;
 	
 	private long totalContentSize;
 	
@@ -148,5 +153,12 @@ public class TitleMetaData {
 		return totalContentSize;
 	}
 
+	public FST getFst() {
+		return fst;
+	}
+
+	public void setFst(FST fst) {
+		this.fst = fst;
+	}	
 
 }

@@ -1,7 +1,13 @@
+package de.mas.jnustool;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+
+import de.mas.jnustool.gui.NUSGUI;
+import de.mas.jnustool.util.Downloader;
+import de.mas.jnustool.util.Util;
 
 public class Starter {
 
@@ -22,7 +28,7 @@ public class Starter {
 			if( args.length > 1 && args[1].length() == 32){
 				key = args[1].substring(0, 32);
 			}
-			NUSGUI m = new NUSGUI(new NUSTitle(titleID, key));
+			NUSGUI m = new NUSGUI(new NUSTitle(titleID, key), null);
 	        m.setVisible(true);			
 		}else{
 			System.out.println("Need parameters: TITLEID [KEY]");

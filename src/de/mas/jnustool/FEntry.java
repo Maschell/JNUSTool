@@ -1,6 +1,13 @@
+package de.mas.jnustool;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
+import de.mas.jnustool.util.Downloader;
+
 public class FEntry {
+	private FST fst;
 	
 	public static int DIR_FLAG = 1;
 	public static int NOT_IN_NUSTITLE_FLAG = 0x80;
@@ -21,7 +28,7 @@ public class FEntry {
 
 	
 	public FEntry(String path, String filename, int contentID,int NUScontentID, long fileOffset, long fileLength, boolean dir,
-			boolean in_nus_title, boolean extract_withHash, List<String> pathList) {
+			boolean in_nus_title, boolean extract_withHash, List<String> pathList,FST fst) {
 		setPath(path);
 		setFileName(filename);
 		setContentID(contentID);
@@ -32,6 +39,7 @@ public class FEntry {
 		setExtractWithHash(extract_withHash);
 		setNUScontentID(NUScontentID);
 		setPathList(pathList);
+		this.fst = fst;
 	}
 
 	public boolean isDir() {
@@ -114,9 +122,41 @@ public class FEntry {
 	private void setNUScontentID(int nUScontentID) {
 		NUScontentID = nUScontentID;
 	}
+	
+	private void createFolder() {
+		long titleID = fst.getTmd().titleID;
+		String [] path = getFullPath().split("/");	   
+		File f = new File (String.format("%016X", titleID));
+		if(!f.exists())f.mkdir();
+		
+	    String folder = String.format("%016X", titleID) +"/";
+	    File folder_ = null;
+	    for(int i = 0;i<path.length-1;i++){
+	    	if(!path[i].equals("")){	    		
+	    		folder += path[i] + "/";
+	    		folder_ = new File(folder);
+	    	    if(!folder_.exists()){
+	    	    	folder_.mkdir();	    	    	
+	    	    }
+	    	}	    	
+	    }
+		f = new File(String.format("%016X", titleID) +"/" +getFullPath().substring(1, getFullPath().length()));
+		if(f.exists()){
+			if(f.length() == getFileLength()){
+				System.out.println("Skipping: " + String.format("%8.2f MB ",getFileLength()/1024.0/1024.0)  + getFullPath());
+				return;
+			}
+		}
+	}
 
-	public void download() {
-		Downloader.getInstance().download(this);
+	public void downloadAndDecrypt() {
+		System.out.println("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
+		try {
+			Downloader.getInstance().downloadAndDecrypt(this);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 

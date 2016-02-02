@@ -1,3 +1,6 @@
+package de.mas.jnustool;
+
+import de.mas.jnustool.util.Util;
 
 public class Content {
 	

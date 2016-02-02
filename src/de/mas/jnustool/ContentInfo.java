@@ -1,3 +1,6 @@
+package de.mas.jnustool;
+
+import de.mas.jnustool.util.Util;
 
 public class ContentInfo {
 	public short 	indexOffset;			//	0	 0x204

@@ -1,3 +1,4 @@
+package de.mas.jnustool.gui;
 /**
  * Based on
  * http://stackoverflow.com/questions/21847411/java-swing-need-a-good-quality-developed-jtree-with-checkboxes/21851201#21851201
@@ -23,6 +24,9 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+
+import de.mas.jnustool.FEntry;
+import de.mas.jnustool.NUSTitle;
 
 public class JCheckBoxTree extends JTree {
 
@@ -158,19 +162,8 @@ public class JCheckBoxTree extends JTree {
     	 super();
     	
     	
-    	 
-    	
-    	
-         
-       
-       /*
-         parent.add(new DefaultMutableTreeNode("hot dogs"));
-         parent.add(new DefaultMutableTreeNode("pizza"));
-         parent.add(new DefaultMutableTreeNode("ravioli"));
-         parent.add(new DefaultMutableTreeNode("bananas"));*/
-         //return ;
       
-         setModel(new DefaultTreeModel(nus.getFst().getDirectory().getNodes()));
+         setModel(new DefaultTreeModel(nus.getFst().getFSTDirectory().getNodes()));
       
         // Disabling toggling by double-click
         this.setToggleClickCount(0);
