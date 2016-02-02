@@ -6,7 +6,7 @@ import java.io.IOException;
 public class Starter {
 
 	public static void main(String[] args) {
-		System.out.println("JNUSTool 0.0.1 - pre alpha - by Maschell");
+		System.out.println("JNUSTool 0.0.2 - pre alpha - by Maschell");
 		System.out.println();
 		try {
 			readConfig();		

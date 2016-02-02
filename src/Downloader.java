@@ -227,6 +227,7 @@ public class Downloader {
 		if(f.exists()){
 			if(f.length() == toDownload.getFileLength()){
 				System.out.println("Skipping: " + String.format("%8.2f MB ", toDownload.getFileLength()/1024.0/1024.0)  + toDownload.getFullPath());
+				return;
 			}
 		}
 		
