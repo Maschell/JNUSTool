@@ -39,8 +39,6 @@ public class Downloader {
      
         int bytesRead = -1;
        
-    
-       
         byte[] IV = new byte[16];
         IV[1] = (byte)toDownload.getContentID();
         
@@ -53,8 +51,8 @@ public class Downloader {
         int inBlockBuffer = 0;
         byte[] tmp = new byte[BLOCKSIZE];
         boolean endd = false;
-        int downloadTotalsize = 0;
-        int wrote = 0;
+        long downloadTotalsize = 0;
+        long wrote = 0;
         Decryption decryption = new Decryption(ticket);
         boolean first = true;
         do{
@@ -79,10 +77,8 @@ public class Downloader {
         		int tooMuch = (oldInThisBlock + bytesRead) - BLOCKSIZE;
         		int toRead = BLOCKSIZE - oldInThisBlock;
         		
-        		
         		System.arraycopy(overflowBuffer, 0, blockBuffer, oldInThisBlock, toRead);
         		inBlockBuffer += toRead;
-        		
         		
         		overflowsize = tooMuch;
         		System.arraycopy(overflowBuffer, toRead, tmp, 0, tooMuch);
@@ -132,7 +128,7 @@ public class Downloader {
 		long soffset = fileOffset - (fileOffset / HASHBLOCKSIZE * HASHBLOCKSIZE);
 		fileOffset = ((fileOffset / HASHBLOCKSIZE) * BLOCKSIZE);		
 
-		long size = (int) fileLength;
+		long size =  fileLength;
 		
 		if( soffset+size > writeSize )
 			writeSize = writeSize - soffset;
@@ -159,7 +155,7 @@ public class Downloader {
        
         byte[] tmp = new byte[BLOCKSIZE];
         boolean lastPart = false;
-        int wrote = 0;
+        long wrote = 0;
         Decryption decryption = new Decryption(ticket);       
         do{        	
         	downloadBuffer = new byte[BLOCKSIZE-bufferPostion];
@@ -226,7 +222,14 @@ public class Downloader {
 	public void download( FEntry toDownload) {
 		File f = new File (String.format("%016X", titleID));
 		if(!f.exists())f.mkdir();
-	
+		
+		f = new File(String.format("%016X", titleID) +"/" +toDownload.getFullPath().substring(1, toDownload.getFullPath().length()));
+		if(f.exists()){
+			if(f.length() == toDownload.getFileLength()){
+				System.out.println("Skipping: " + String.format("%8.2f MB ", toDownload.getFileLength()/1024.0/1024.0)  + toDownload.getFullPath());
+			}
+		}
+		
 		
 		System.out.println("Downloading: " + String.format("%8.2f MB ", toDownload.getFileLength()/1024.0/1024.0)  + toDownload.getFullPath());
 		
@@ -257,9 +260,7 @@ public class Downloader {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		//System.out.println("Finished: " + toDownload.getFullPath());
-		
+		}		
 	}
 	
 	public static String URL_BASE = "";
