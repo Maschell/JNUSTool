@@ -2,6 +2,7 @@ package de.mas.jnustool.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -331,6 +332,34 @@ public class Decryption {
 		
 		outputStream.close();
 		inputSteam.close();
+		
+	}
+	
+	public void decrypt(FEntry fileEntry,String outputPath) throws IOException {
+		String [] path = fileEntry.getFullPath().split("/");
+		boolean decryptWithHash = false;
+		if(!path[1].equals("code") && fileEntry.isExtractWithHash()){
+			decryptWithHash = true;
+		}
+		
+		long fileOffset = fileEntry.getFileOffset();
+		if(decryptWithHash){
+			int BLOCKSIZE = 0x10000;
+			int HASHBLOCKSIZE = 0xFC00;
+			fileOffset = ((fileEntry.getFileOffset() / HASHBLOCKSIZE) * BLOCKSIZE);
+		}		
+		
+	    
+	    InputStream input = new FileInputStream(fileEntry.getContentPath());
+	    FileOutputStream outputStream = new FileOutputStream(outputPath + "/" + fileEntry.getFileName());
+	    
+	    input.skip(fileOffset);
+	    
+	    if(!decryptWithHash){
+	    	decryptFile(input, outputStream, fileEntry);
+	    }else{
+	    	decryptFileHash(input, outputStream, fileEntry);
+	    }
 		
 	}
 

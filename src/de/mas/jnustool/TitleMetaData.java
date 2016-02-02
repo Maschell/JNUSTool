@@ -3,8 +3,18 @@ package de.mas.jnustool;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
+import de.mas.jnustool.util.Downloader;
+import de.mas.jnustool.util.ExitException;
+import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
 
 public class TitleMetaData {
@@ -27,7 +37,8 @@ public class TitleMetaData {
 	ContentInfo[] 	contentInfos		= 	new ContentInfo[64];	// 0x1E4
 	Content[] 		contents;										// 0x1E4 
 	
-	private FST fst;
+	
+	private NUSTitle nus;
 	
 	private long totalContentSize;
 	
@@ -105,8 +116,7 @@ public class TitleMetaData {
 			type = f.readShort();
 			size = f.readLong();
 			byte[] buffer = new byte[0x20];	//  16    0xB14
-			f.read(buffer,0, 0x20);		
-			
+			f.read(buffer,0, 0x20);
 			
 			this.contents[i] = new Content(ID,index,type,size,buffer);
 		}		
@@ -152,13 +162,50 @@ public class TitleMetaData {
 	public long getTotalContentSize() {
 		return totalContentSize;
 	}
-
-	public FST getFst() {
-		return fst;
+	
+	public void downloadContents() throws IOException, ExitException{
+		String tmpPath = getContentPath();
+		File f = new File(tmpPath);
+		if(!f.exists())f.mkdir();
+		
+		for(Content c : contents){
+			if(c != contents[0]){
+				f = new File(tmpPath + "/" + String.format("%08X", c.ID ) + ".app");
+				if(f.exists()){
+					if(f.length() == c.size){
+						System.out.println("Skipping Content: " + String.format("%08X", c.ID));						
+					}else{
+						if(Settings.downloadWhenCachedFilesMissingOrBroken){
+							System.out.println("Content " +String.format("%08X", c.ID) + " is broken. Downloading it again.");
+							Downloader.getInstance().downloadContent(titleID,c.ID,tmpPath);	
+						}else{
+							if(Settings.skipBrokenFiles){
+								System.out.println("Content " +String.format("%08X", c.ID) + " is broken. Ignoring it.");								
+							}else{
+								System.out.println("Content " +String.format("%08X", c.ID) + " is broken. Downloading not allowed.");
+								throw new ExitException("Content missing.");	
+							}					
+						}
+					}
+				}else{
+					System.out.println("Download Content: " + String.format("%08X", c.ID));
+					Downloader.getInstance().downloadContent(titleID,c.ID,tmpPath);		
+				}
+			}
+		}
+			
 	}
 
-	public void setFst(FST fst) {
-		this.fst = fst;
-	}	
+	public String getContentPath() {		
+		return nus.getContentPath();
+	}
+
+	public NUSTitle getNUSTitle() {
+		return nus;
+	}
+
+	public void setNUSTitle(NUSTitle nus) {
+		this.nus = nus;
+	}
 
 }

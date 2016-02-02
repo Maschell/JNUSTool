@@ -13,10 +13,10 @@ import javax.swing.JScrollPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
-import de.mas.jnustool.Settings;
 import de.mas.jnustool.FEntry;
 import de.mas.jnustool.NUSTitle;
-import de.mas.jnustool.TitleDownloader;
+import de.mas.jnustool.util.Settings;
+import de.mas.jnustool.FEntryDownloader;
 
 public class NUSGUI extends JFrame {
 
@@ -39,16 +39,19 @@ public class NUSGUI extends JFrame {
         	public void actionPerformed(ActionEvent e) { 
         		new Thread(new Runnable() { public void run() { 
         			ForkJoinPool pool = ForkJoinPool.commonPool();
-            		List<TitleDownloader> list = new ArrayList<>();
+            		List<FEntryDownloader> list = new ArrayList<>();
         			
         			
                     TreePath[] paths = cbt.getCheckedPaths();
                     for (TreePath tp : paths) {
+                    	
                     	Object obj = tp.getPath()[tp.getPath().length-1];
                     	if(((DefaultMutableTreeNode)obj).getUserObject() instanceof FEntry){
                     		FEntry f = (FEntry) ((DefaultMutableTreeNode)obj).getUserObject();
-                    		if(!f.isDir() &&  f.isInNUSTitle())
-                    			list.add(new TitleDownloader(f));
+                    		if(!f.isDir() &&  f.isInNUSTitle()){                    			
+                    			list.add(new FEntryDownloader(f));
+                    		}
+                    			
                     	}
                     }
                     pool.invokeAll(list);

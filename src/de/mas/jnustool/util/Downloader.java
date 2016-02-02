@@ -1,6 +1,5 @@
 package de.mas.jnustool.util;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,7 +7,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import de.mas.jnustool.FEntry;
-import de.mas.jnustool.TIK;
 
 public class Downloader {
 	private static Downloader instance;
@@ -23,11 +21,9 @@ public class Downloader {
 		
 	}
 	
-	public long titleID =0;
-	public TIK ticket = null;
 	
 	public void downloadAndDecrypt(FEntry toDownload) throws IOException{
-		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", toDownload.getNUScontentID());		
+		String URL = URL_BASE + "/" + String.format("%016X", toDownload.getTitleID()) +  "/" + String.format("%08X", toDownload.getNUScontentID());		
 		URL url = new URL(URL);
 		String [] path = toDownload.getFullPath().split("/");
 		boolean decryptWithHash = false;
@@ -48,10 +44,10 @@ public class Downloader {
 	  
 	    connection.connect();
 	    
-	    Decryption decryption = new Decryption(ticket);
+	    Decryption decryption = new Decryption(toDownload.getTicket());
 	    
 	    InputStream input = connection.getInputStream();
-	    FileOutputStream outputStream = new FileOutputStream(String.format("%016X", titleID) +"/" + toDownload.getFullPath().substring(1, toDownload.getFullPath().length()));
+	    FileOutputStream outputStream = new FileOutputStream(String.format("%016X", toDownload.getTitleID()) +"/" + toDownload.getFullPath().substring(1, toDownload.getFullPath().length()));
 	    if(!decryptWithHash){
 	        decryption.decryptFile(input, outputStream, toDownload);
 	    }else{
@@ -63,20 +59,23 @@ public class Downloader {
 	
 	public static String URL_BASE = "";
 
-	public void downloadTMD(int version) throws IOException {
-		downloadTMD();		
+	public void downloadTMD(long titleID,int version,String path) throws IOException {
+		downloadTMD(titleID,path);		
 	}
-	public void downloadTMD() throws IOException {
+	public void downloadTMD(long titleID,String path) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd";
-		downloadFile(URL, "tmd");		
+		downloadFile(URL, "tmd",path);		
 	}
-	public void downloadFile(String fileURL,String filename) throws IOException{
+	public void downloadFile(String fileURL,String filename,String tmpPath) throws IOException{
 		int BUFFER_SIZE = 0x800;
 		URL url = new URL(fileURL);
 	    HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
 	
         InputStream inputStream = httpConn.getInputStream();
-    
+        if(tmpPath != null){
+        	filename = tmpPath + "/" + filename;
+        }
+        
         FileOutputStream outputStream = new FileOutputStream(filename);
 
         int bytesRead = -1;
@@ -90,20 +89,22 @@ public class Downloader {
 	  
 	    httpConn.disconnect();
 	}
-	public void downloadTicket() throws IOException {
+	
+	public void downloadFile(String fileURL,String filename) throws IOException{
+		downloadFile(fileURL, filename,null);
+	}
+	public void downloadTicket(long titleID,String path) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/cetk";
-		downloadFile(URL, "cetk");
+		downloadFile(URL, "cetk",path);
 	}
-	public void downloadContent(int contentID) throws IOException {
-		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID);
-		downloadFile(URL, String.format("%08X", contentID));
-		
+	public void downloadContent(long titleID,int contentID) throws IOException {
+		downloadContent(titleID,contentID, null);
 	}
-	public byte[] downloadContentToByteArray(int contentID) throws IOException {
+	public byte[] downloadContentToByteArray(long titleID,int contentID) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID);
 		return downloadFileToByteArray(URL);		
 	}
-	public byte[] downloadTMDToByteArray() throws IOException {
+	public byte[] downloadTMDToByteArray(long titleID) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd";
 		return downloadFileToByteArray(URL);
 	}
@@ -141,9 +142,15 @@ public class Downloader {
 	    return file;
 		
 	}
-	public byte[] downloadTicketToByteArray() throws IOException {
+	public byte[] downloadTicketToByteArray(long titleID) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/cetk";
 		return downloadFileToByteArray(URL);
 	}
+	public void downloadContent(long titleID,int contentID, String tmpPath) throws IOException {
+		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID);
+		downloadFile(URL, String.format("%08X", contentID) +".app",tmpPath);
+		
+	}
+	
 	
 }

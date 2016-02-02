@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import de.mas.jnustool.util.Decryption;
 import de.mas.jnustool.util.Downloader;
+import de.mas.jnustool.util.ExitException;
+import de.mas.jnustool.util.Settings;
 
 public class FEntry {
 	private FST fst;
@@ -124,7 +127,7 @@ public class FEntry {
 	}
 	
 	private void createFolder() {
-		long titleID = fst.getTmd().titleID;
+		long titleID = getTitleID();
 		String [] path = getFullPath().split("/");	   
 		File f = new File (String.format("%016X", titleID));
 		if(!f.exists())f.mkdir();
@@ -140,20 +143,71 @@ public class FEntry {
 	    	    }
 	    	}	    	
 	    }
-		f = new File(String.format("%016X", titleID) +"/" +getFullPath().substring(1, getFullPath().length()));
+		
+	}
+	public String getDownloadPath(){
+		String [] path = getFullPath().split("/");	   
+		String folder = String.format("%016X", getTitleID()) +"/";
+	    for(int i = 0;i<path.length-1;i++){
+	    	if(!path[i].equals("")){	    		
+	    		folder += path[i] + "/";	    		
+	    	}	    	
+	    }
+	    return folder;
+	}
+
+	public void downloadAndDecrypt() throws ExitException {
+		
+		createFolder();
+		long titleID = getTitleID();
+		File f = new File(String.format("%016X", titleID) +"/" +getFullPath().substring(1, getFullPath().length()));
 		if(f.exists()){
 			if(f.length() == getFileLength()){
 				System.out.println("Skipping: " + String.format("%8.2f MB ",getFileLength()/1024.0/1024.0)  + getFullPath());
 				return;
 			}
 		}
-	}
-
-	public void downloadAndDecrypt() {
-		System.out.println("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
 		try {
+			if(Settings.useCachedFiles){
+				f = new File(getContentPath());
+				if(f.exists()){				
+					if(f.length() == fst.getTmd().contents[this.getContentID()].size){
+						System.out.println("Decrypting: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
+						Decryption decrypt = new Decryption(fst.getTmd().getNUSTitle().getTicket());
+						decrypt.decrypt(this,getDownloadPath());
+						return;
+					}else{
+						if(!Settings.downloadWhenCachedFilesMissingOrBroken){
+							System.out.println("Cached content has the wrong size! Please check your: "+ getContentPath() + " Downloading not allowed");
+							if(!Settings.skipBrokenFiles){								
+								throw new ExitException("");
+							}else{
+								System.out.println("Ignoring the missing file: " + this.getFileName());
+							}
+						}else{
+							System.out.println("Content missing. Downloading the file from the server: " + this.getFileName());
+						}
+						
+					}
+				}else{
+					if(!Settings.downloadWhenCachedFilesMissingOrBroken){
+						System.out.println("Content missing. Downloading not allowed");
+						if(!Settings.skipBrokenFiles){
+							throw new ExitException("");
+						}else{
+							System.out.println("Ignoring the missing file: " + this.getFileName());
+						}
+					}else{
+						System.out.println("Content missing. Downloading the file from the server: " + this.getFileName());
+					}
+				}
+			}
+			System.out.println("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
 			Downloader.getInstance().downloadAndDecrypt(this);
+			
+			
 		} catch (IOException e) {
+			
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -166,6 +220,18 @@ public class FEntry {
 
 	public void setPathList(List<String> pathList) {
 		this.pathList = pathList;
+	}
+
+	public String getContentPath() {
+		return fst.getTmd().getContentPath() + "/" + String.format("%08X", getNUScontentID()) + ".app";
+	}
+
+	public long getTitleID() {		
+		return fst.getTmd().titleID;
+	}
+
+	public TIK getTicket() {		
+		return fst.getTmd().getNUSTitle().getTicket();
 	}
 
 	

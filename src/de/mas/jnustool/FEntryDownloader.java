@@ -2,14 +2,13 @@ package de.mas.jnustool;
 
 import java.util.concurrent.Callable;
 
-public class TitleDownloader implements Callable<Integer>
+public class FEntryDownloader implements Callable<Integer>
 {
-	
 	FEntry f;
 	public void setTitle(FEntry f){
 		 this.f = f;
 	}
-	public TitleDownloader(FEntry f){
+	public FEntryDownloader(FEntry f){
 		setTitle(f);
 	}
  
