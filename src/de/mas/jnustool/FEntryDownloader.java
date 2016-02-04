@@ -4,19 +4,22 @@ import java.util.concurrent.Callable;
 
 public class FEntryDownloader implements Callable<Integer>
 {
-	FEntry f;
-	public void setTitle(FEntry f){
-		 this.f = f;
-	}
-	public FEntryDownloader(FEntry f){
-		setTitle(f);
-	}
- 
-  
-	@Override
-	public Integer call() throws Exception {
-		f.downloadAndDecrypt();
-		return null;
+	private FEntry fEntry;
+
+	public void setTitle(FEntry fEntry)
+	{
+		this.fEntry = fEntry;
 	}
 
+	public FEntryDownloader(FEntry fEntry)
+	{
+		setTitle(fEntry);
+	}
+
+	@Override
+	public Integer call() throws Exception
+	{
+		fEntry.downloadAndDecrypt();
+		return null;
+	}
 }
