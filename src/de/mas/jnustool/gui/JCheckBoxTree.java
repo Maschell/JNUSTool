@@ -160,8 +160,6 @@ public class JCheckBoxTree extends JTree {
 
     public JCheckBoxTree(NUSTitle nus) {
     	 super();
-    	
-    	
       
          setModel(new DefaultTreeModel(nus.getFst().getFSTDirectory().getNodes()));
       

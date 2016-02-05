@@ -48,3 +48,5 @@ Temporary Items
 0*
 bin
 /config
+/tmp*
+UpdateGrabber.java

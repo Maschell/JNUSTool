@@ -3,17 +3,9 @@ package de.mas.jnustool;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 import de.mas.jnustool.util.Downloader;
-import de.mas.jnustool.util.ExitException;
 import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
 
@@ -47,9 +39,10 @@ public class TitleMetaData {
 		setTotalContentSize();
 	}
 
-	public TitleMetaData(byte[] downloadTMDToByteArray) throws IOException {
-		if(downloadTMDToByteArray != null){
-			File tempFile = File.createTempFile("bla","blubb");		
+	public TitleMetaData(byte[] downloadTMDToByteArray) throws IOException  {
+		if(downloadTMDToByteArray != null){			
+			File tempFile;
+			tempFile = File.createTempFile("bla","blubb");				
 			FileOutputStream fos = new FileOutputStream(tempFile);
 			fos.write(downloadTMDToByteArray);
 			fos.close();
@@ -62,6 +55,7 @@ public class TitleMetaData {
 	}
 
 	private void parse(File tmd) throws IOException {
+		
 		RandomAccessFile f = new RandomAccessFile(tmd, "r");		
 		f.seek(0);
 		this.signatureType = f.readInt();
@@ -163,7 +157,7 @@ public class TitleMetaData {
 		return totalContentSize;
 	}
 	
-	public void downloadContents() throws IOException, ExitException{
+	public void downloadContents() throws IOException{
 		String tmpPath = getContentPath();
 		File f = new File(tmpPath);
 		if(!f.exists())f.mkdir();
@@ -173,22 +167,22 @@ public class TitleMetaData {
 				f = new File(tmpPath + "/" + String.format("%08X", c.ID ) + ".app");
 				if(f.exists()){
 					if(f.length() == c.size){
-						System.out.println("Skipping Content: " + String.format("%08X", c.ID));						
+						Logger.log("Skipping Content: " + String.format("%08X", c.ID));						
 					}else{
 						if(Settings.downloadWhenCachedFilesMissingOrBroken){
-							System.out.println("Content " +String.format("%08X", c.ID) + " is broken. Downloading it again.");
+							Logger.log("Content " +String.format("%08X", c.ID) + " is broken. Downloading it again.");
 							Downloader.getInstance().downloadContent(titleID,c.ID,tmpPath);	
 						}else{
 							if(Settings.skipBrokenFiles){
-								System.out.println("Content " +String.format("%08X", c.ID) + " is broken. Ignoring it.");								
+								Logger.log("Content " +String.format("%08X", c.ID) + " is broken. Ignoring it.");								
 							}else{
-								System.out.println("Content " +String.format("%08X", c.ID) + " is broken. Downloading not allowed.");
-								throw new ExitException("Content missing.");	
+								Logger.log("Content " +String.format("%08X", c.ID) + " is broken. Downloading not allowed.");
+								System.exit(2);
 							}					
 						}
 					}
 				}else{
-					System.out.println("Download Content: " + String.format("%08X", c.ID));
+					Logger.log("Download Content: " + String.format("%08X", c.ID));
 					Downloader.getInstance().downloadContent(titleID,c.ID,tmpPath);		
 				}
 			}

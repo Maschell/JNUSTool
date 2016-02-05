@@ -6,7 +6,6 @@ import java.util.List;
 
 import de.mas.jnustool.util.Decryption;
 import de.mas.jnustool.util.Downloader;
-import de.mas.jnustool.util.ExitException;
 import de.mas.jnustool.util.Settings;
 
 public class FEntry {
@@ -156,14 +155,13 @@ public class FEntry {
 	    return folder;
 	}
 
-	public void downloadAndDecrypt() throws ExitException {
-		
+	public void downloadAndDecrypt() {
 		createFolder();
 		long titleID = getTitleID();
 		File f = new File(String.format("%016X", titleID) +"/" +getFullPath().substring(1, getFullPath().length()));
 		if(f.exists()){
 			if(f.length() == getFileLength()){
-				System.out.println("Skipping: " + String.format("%8.2f MB ",getFileLength()/1024.0/1024.0)  + getFullPath());
+				Logger.log("Skipping: " + String.format("%8.2f MB ",getFileLength()/1024.0/1024.0)  + getFullPath());
 				return;
 			}
 		}
@@ -172,44 +170,45 @@ public class FEntry {
 				f = new File(getContentPath());
 				if(f.exists()){				
 					if(f.length() == fst.getTmd().contents[this.getContentID()].size){
-						System.out.println("Decrypting: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
+						Logger.log("Decrypting: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
 						Decryption decrypt = new Decryption(fst.getTmd().getNUSTitle().getTicket());
 						decrypt.decrypt(this,getDownloadPath());
 						return;
 					}else{
 						if(!Settings.downloadWhenCachedFilesMissingOrBroken){
-							System.out.println("Cached content has the wrong size! Please check your: "+ getContentPath() + " Downloading not allowed");
-							if(!Settings.skipBrokenFiles){								
-								throw new ExitException("");
+							Logger.log("Cached content has the wrong size! Please check your: "+ getContentPath() + " Downloading not allowed");
+							if(!Settings.skipBrokenFiles){
+								System.err.println("File broken!");
+								System.exit(2);
 							}else{
-								System.out.println("Ignoring the missing file: " + this.getFileName());
+								Logger.log("Ignoring the missing file: " + this.getFileName());
 							}
 						}else{
-							System.out.println("Content missing. Downloading the file from the server: " + this.getFileName());
+							Logger.log("Content missing. Downloading the file from the server: " + this.getFileName());
 						}
 						
 					}
 				}else{
 					if(!Settings.downloadWhenCachedFilesMissingOrBroken){
-						System.out.println("Content missing. Downloading not allowed");
+						Logger.log("Content missing. Downloading not allowed");
 						if(!Settings.skipBrokenFiles){
-							throw new ExitException("");
+							System.err.println("File broken!");
+							System.exit(2);
 						}else{
-							System.out.println("Ignoring the missing file: " + this.getFileName());
+							Logger.log("Ignoring the missing file: " + this.getFileName());
 						}
 					}else{
-						System.out.println("Content missing. Downloading the file from the server: " + this.getFileName());
+						Logger.log("Content missing. Downloading the file from the server: " + this.getFileName());
 					}
 				}
 			}
-			System.out.println("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
+			Logger.log("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
 			Downloader.getInstance().downloadAndDecrypt(this);
 			
 			
 		} catch (IOException e) {
-			
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(2);
 		}
 		
 	}

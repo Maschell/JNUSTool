@@ -18,7 +18,7 @@ public class FST {
 	
 	int totalEntries = 0;
 	int dirEntries = 0;
-	
+	public FEntry metaFENtry;
 	private Directory FSTDirectory = new Directory("root");
 	
 	private Directory contentDirectory = new Directory("root");
@@ -86,13 +86,13 @@ public class FST {
 	private void parse(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
 		
 		if(!Arrays.equals(Arrays.copyOfRange(decrypteddata, 0, 3), new byte[]{0x46,0x53,0x54})){
+			Logger.log(Util.ByteArrayToString(Arrays.copyOfRange(decrypteddata, 0, 3)));
 			System.err.println("Not a FST. Maybe a wrong key?");
 			throw new IllegalArgumentException("File not a FST");
 		}
 		
 		this.totalContentCount = Util.getIntFromBytes(decrypteddata, 8);
 		int base_offset = 0x20+totalContentCount*0x20;
-		
 		this.totalEntries = Util.getIntFromBytes(decrypteddata, base_offset+8);
 		int nameOff = base_offset + totalEntries * 0x10;
 		
@@ -137,6 +137,8 @@ public class FST {
 			int nameoff_entry = nameOff + nameoff_entry_offset;
 			while(decrypteddata[nameoff_entry + j] != 0){j++;}
 			filename = new String(Arrays.copyOfRange(decrypteddata,nameoff_entry, nameoff_entry + j));
+			
+			
 			
 			//getting offsets. save in two ways
 			offset+=4;
@@ -188,9 +190,8 @@ public class FST {
 					String tmpname = new String(Arrays.copyOfRange(decrypteddata,nameoff_entrypath, nameoff_entrypath + k));
 					if(!tmpname.equals("")){
 						pathList.add(tmpname);
-					}
-					
-					
+						
+					}					
 						
 					sb.append(tmpname);
 					sb.append("/");		
@@ -199,8 +200,12 @@ public class FST {
 			}
 			
 			//add this to the List!
-			fileEntries.add(new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this));
-			//System.out.println(fileEntries.get(i));
+			FEntry tmp = new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this);
+			fileEntries.add(tmp);
+			if(filename.equals("meta.xml")){
+				metaFENtry = tmp;
+			}
+			//Logger.log(fileEntries.get(i));
 		}
 		
 	}

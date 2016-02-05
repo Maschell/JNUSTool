@@ -66,14 +66,15 @@ public class Directory {
 
 	@Override
 	public String toString(){
-		System.out.println(name + ":");
+		StringBuilder sb = new StringBuilder();
+		sb.append(name + ":" + "\n");
 		for(Directory d : folder.values()){
-			System.out.println(d);			
+			sb.append(d + "\n");		
 		}
 		for(String s : files.keySet()){
-			System.out.println(s);			
+			sb.append(s + "\n");			
 		}
-		return "";
+		return sb.toString();
 	}
 	
 	public DefaultMutableTreeNode getNodes(){

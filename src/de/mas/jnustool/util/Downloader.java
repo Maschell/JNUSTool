@@ -104,8 +104,8 @@ public class Downloader {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID);
 		return downloadFileToByteArray(URL);		
 	}
-	public byte[] downloadTMDToByteArray(long titleID) throws IOException {
-		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd";
+	public byte[] downloadTMDToByteArray(long titleID) throws IOException {		
+		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd";		
 		return downloadFileToByteArray(URL);
 	}
 	private byte[] downloadFileToByteArray(String fileURL) throws IOException {

@@ -5,75 +5,80 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ForkJoinPool;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import de.mas.jnustool.FEntry;
 import de.mas.jnustool.NUSTitle;
 import de.mas.jnustool.util.Settings;
-import de.mas.jnustool.FEntryDownloader;
 
 public class NUSGUI extends JFrame {
 
     private static final long serialVersionUID = 4648172894076113183L;
-
+    public static JTextArea output = new JTextArea(1,10);
     public NUSGUI(NUSTitle nus,Settings mode) {
         super();
-        setSize(800, 600);
-        getContentPane().setLayout(new BorderLayout(0, 0));
-       
-        final JCheckBoxTree cbt = new JCheckBoxTree(nus);
-        JScrollPane qPane = new JScrollPane(cbt,
-        	      JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-        	      JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        this.getContentPane().add(qPane);
+        this.setResizable(false);
+        setSize(600, 768);
+       setTitle(String.format("%016X", nus.getTitleID()));
+        getContentPane().setLayout(null);
         
+        JSplitPane splitPane = new JSplitPane();
+        splitPane.setBounds(0, 0, 594, 726);
+        splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+        getContentPane().add(splitPane, BorderLayout.NORTH);
+        JScrollPane qPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        	      JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        
+       
+        this.getContentPane().add(splitPane);
+        final JCheckBoxTree cbt = new JCheckBoxTree(nus);
+        qPane.setViewportView(cbt);
+        
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout(0, 0));
+        panel.add(qPane);
+        splitPane.setLeftComponent(panel);
         
         JButton btnNewButton = new JButton("Download");
+        panel.add(btnNewButton, BorderLayout.SOUTH);
+       
         btnNewButton.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) { 
-        		new Thread(new Runnable() { public void run() { 
-        			ForkJoinPool pool = ForkJoinPool.commonPool();
-            		List<FEntryDownloader> list = new ArrayList<>();
+        		new Thread(new Runnable() { public void run() {
         			
-        			
+            		List<FEntry> list = new ArrayList<>();
                     TreePath[] paths = cbt.getCheckedPaths();
                     for (TreePath tp : paths) {
-                    	
                     	Object obj = tp.getPath()[tp.getPath().length-1];
                     	if(((DefaultMutableTreeNode)obj).getUserObject() instanceof FEntry){
-                    		FEntry f = (FEntry) ((DefaultMutableTreeNode)obj).getUserObject();
-                    		if(!f.isDir() &&  f.isInNUSTitle()){                    			
-                    			list.add(new FEntryDownloader(f));
-                    		}
-                    			
+                    		list.add((FEntry) ((DefaultMutableTreeNode)obj).getUserObject());                    		
                     	}
                     }
-                    pool.invokeAll(list);
-                    System.out.println("Done!");
+                  
+        			nus.decryptFEntries(list);
         		}}).start();
         		
         	}
         });
-        getContentPane().add(btnNewButton, BorderLayout.SOUTH);
+        JScrollPane outputPane = new JScrollPane(output,
+                         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);	
         
-        /*cbt.addCheckChangeEventListener(new JCheckBoxTree.CheckChangeEventListener() {
-            public void checkStateChanged(JCheckBoxTree.CheckChangeEvent event) {
-                System.out.println("event");
-                TreePath[] paths = cbt.getCheckedPaths();
-                for (TreePath tp : paths) {
-                    for (Object pathPart : tp.getPath()) {
-                        System.out.print(pathPart + ",");
-                    }                   
-                    System.out.println();
-                }
-            }           
-        });*/
+        splitPane.setRightComponent(outputPane);
+        
+        splitPane.setDividerLocation(0.7);
+        splitPane.setResizeWeight(0.7);
+
+        splitPane.setEnabled(false);
         
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
