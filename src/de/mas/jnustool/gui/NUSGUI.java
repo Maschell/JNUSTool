@@ -17,7 +17,12 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import de.mas.jnustool.FEntry;
+import de.mas.jnustool.Logger;
 import de.mas.jnustool.NUSTitle;
+import de.mas.jnustool.Progress;
+import de.mas.jnustool.ProgressUpdateListener;
+
+import javax.swing.JProgressBar;
 
 public class NUSGUI extends JFrame {
 
@@ -47,25 +52,47 @@ public class NUSGUI extends JFrame {
         panel.add(qPane);
         splitPane.setLeftComponent(panel);
         
+        JPanel panel_1 = new JPanel();
+        panel.add(panel_1, BorderLayout.SOUTH);
+        
         JButton btnNewButton = new JButton("Download");
-        panel.add(btnNewButton, BorderLayout.SOUTH);
+        panel_1.add(btnNewButton);
+        
+        JProgressBar progressBar = new JProgressBar();
+        panel_1.add(progressBar);
+        
+        progressBar.setValue(0);
+        Progress progress = new Progress();
+        progress.setProgressUpdateListener(new ProgressUpdateListener() {
+			
+			@Override
+			public void updatePerformed(Progress p) {
+				progressBar.setValue((int)p.statusInPercent());
+			}
+		});
        
         btnNewButton.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) { 
-        		new Thread(new Runnable() { public void run() {
-        			
-            		List<FEntry> list = new ArrayList<>();
-                    TreePath[] paths = cbt.getCheckedPaths();
-                    for (TreePath tp : paths) {
-                    	Object obj = tp.getPath()[tp.getPath().length-1];
-                    	if(((DefaultMutableTreeNode)obj).getUserObject() instanceof FEntry){
-                    		list.add((FEntry) ((DefaultMutableTreeNode)obj).getUserObject());                    		
-                    	}
-                    }
-                  
-        			nus.decryptFEntries(list, null);
-        		}}).start();
-        		
+        		if(!progress.isInProgress()){
+	        		progress.clear();
+	        		progress.operationStart();
+	        		new Thread(new Runnable() { public void run() {
+	        			
+	            		List<FEntry> list = new ArrayList<>();
+	                    TreePath[] paths = cbt.getCheckedPaths();
+	                    for (TreePath tp : paths) {
+	                    	Object obj = tp.getPath()[tp.getPath().length-1];
+	                    	if(((DefaultMutableTreeNode)obj).getUserObject() instanceof FEntry){
+	                    		list.add((FEntry) ((DefaultMutableTreeNode)obj).getUserObject());                    		
+	                    	}
+	                    }
+	        			nus.decryptFEntries(list, progress);
+	        			progress.operationFinish();
+	        			Logger.messageBox("Finished");
+	        		}}).start();
+        		}else{
+        			Logger.messageBox("Operation still in progress, please wait");
+        		}
         	}
         });
         JScrollPane outputPane = new JScrollPane(output,

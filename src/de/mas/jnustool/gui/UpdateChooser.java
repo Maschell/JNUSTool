@@ -27,6 +27,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import de.mas.jnustool.Logger;
 import de.mas.jnustool.Progress;
 import de.mas.jnustool.ProgressUpdateListener;
 import de.mas.jnustool.Starter;
@@ -154,20 +155,21 @@ public class UpdateChooser extends JPanel {
         
         btnDownloadMeta.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		if(progressBar_1.getValue() == 0 || progressBar_1.getValue() == 100){
-	        		progressBar_1.setValue(1);
+        		if(!progress.isInProgress()){
 	        		progress.clear();
+	        		progress.operationStart();
 	        		new Thread(new Runnable(){
 						@Override
 						public void run() {
 							Starter.downloadMeta(output_,progress);
-							JOptionPane.showMessageDialog(window, "Finished");
+							progress.operationFinish();
+							Logger.messageBox("Finished");							
 						}
 	        			
 	        		}).start();
 	        		
         		}else{
-        			JOptionPane.showMessageDialog(window, "Operation still in progress, please wait");
+        			Logger.messageBox("Operation still in progress, please wait");
         		}        		
         	}
         });

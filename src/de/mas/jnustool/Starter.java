@@ -22,7 +22,7 @@ public class Starter {
 	private static String updateCSVPath;
 	
 	public static void main(String[] args) {		
-		Logger.log("JNUSTool 0.0.3 - pre alpha - by Maschell");
+		Logger.log("JNUSTool 0.0.4 - pre alpha - by Maschell");
 		Logger.log("");
 		try {
 			readConfig();

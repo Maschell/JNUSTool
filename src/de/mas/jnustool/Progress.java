@@ -86,7 +86,20 @@ public class Progress {
 	}
 
 	public void finish() {
-		setCurrent(getTotalOfSingle());		
+		setCurrent(getTotalOfSingle());
+	}
+	
+	private boolean inprogress = false;
+
+	public void operationStart() {
+		inprogress = true;		
+	}
+	public void operationFinish() {
+		inprogress = false;
+	}
+	
+	public boolean isInProgress(){
+		return inprogress;
 	}
 	
 }
