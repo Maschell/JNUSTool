@@ -18,13 +18,12 @@ import javax.swing.tree.TreePath;
 
 import de.mas.jnustool.FEntry;
 import de.mas.jnustool.NUSTitle;
-import de.mas.jnustool.util.Settings;
 
 public class NUSGUI extends JFrame {
 
     private static final long serialVersionUID = 4648172894076113183L;
     public static JTextArea output = new JTextArea(1,10);
-    public NUSGUI(NUSTitle nus,Settings mode) {
+    public NUSGUI(NUSTitle nus) {
         super();
         this.setResizable(false);
         setSize(600, 768);
@@ -64,7 +63,7 @@ public class NUSGUI extends JFrame {
                     	}
                     }
                   
-        			nus.decryptFEntries(list);
+        			nus.decryptFEntries(list, null);
         		}}).start();
         		
         	}

@@ -20,6 +20,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import de.mas.jnustool.FEntry;
+import de.mas.jnustool.Progress;
 import de.mas.jnustool.TIK;
 
 public class Decryption {	
@@ -171,6 +172,10 @@ public class Decryption {
         
         boolean first = true;
         ByteArrayBuffer overflow = new ByteArrayBuffer(BLOCKSIZE);
+        if(progressListener != null){
+        	progressListener.setTotal(toDownload.getFileLength());
+        	progressListener.setCurrent(0);
+        }
         do{ 
         		inBlockBuffer = getChunkFromStream(inputStream,blockBuffer,overflow,BLOCKSIZE);
         		if(first){
@@ -184,7 +189,9 @@ public class Decryption {
              	if((wrote + inBlockBuffer) > toDownload.getFileLength()){             		
              		inBlockBuffer = (int) (toDownload.getFileLength()- wrote);             		
              	}
-             	
+             	 if(progressListener != null){
+             		progressListener.addCurrent(inBlockBuffer);
+             	 }
              	wrote += inBlockBuffer;
         		outputStream.write(output, 0, inBlockBuffer);
         }while(inBlockBuffer == BLOCKSIZE);
@@ -209,9 +216,16 @@ public class Decryption {
 	
 	    long wrote = 0;
 	    int inBlockBuffer;
+	    
+	    if(progressListener != null){
+        	progressListener.setTotal(toDownload.getFileLength()/HASHBLOCKSIZE*BLOCKSIZE);
+        	progressListener.setCurrent(0);
+        }
     	do{        	
     		inBlockBuffer = getChunkFromStream(inputStream,encryptedBlockBuffer,overflow,BLOCKSIZE);
-				
+    		if(progressListener != null){            	
+            	progressListener.addCurrent(inBlockBuffer);
+            }
 			if( writeSize > size )
 				writeSize = size;
 			
@@ -293,6 +307,13 @@ public class Decryption {
 	    	}
     	}while(inBlockBuffer != BLOCKSIZE);
     	return inBlockBuffer;
+	}
+	
+	private Progress progressListener = null;
+
+	public void setProgressListener(Progress progressOfFile) {
+		this.progressListener = progressOfFile;
+		
 	}
 	
 	

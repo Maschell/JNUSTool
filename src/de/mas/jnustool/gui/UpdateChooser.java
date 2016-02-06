@@ -15,7 +15,9 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
@@ -25,6 +27,9 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import de.mas.jnustool.Progress;
+import de.mas.jnustool.ProgressUpdateListener;
+import de.mas.jnustool.Starter;
 import de.mas.jnustool.util.NUSTitleInformation;
 
 public class UpdateChooser extends JPanel {
@@ -42,7 +47,8 @@ public class UpdateChooser extends JPanel {
         setSize(800, 600);
 
         Collections.sort(list_);
-        output_.init(list_.get(0));
+        
+        output_.add(list_.get(0));
         String[] columnNames = { "TitleID", "Region", "Name" };
         String[][] tableData = new String[list_.size()][];
         int i = 0;
@@ -95,7 +101,7 @@ public class UpdateChooser extends JPanel {
 
  
         listSelectionModel.setSelectionMode(
-                ListSelectionModel.SINGLE_SELECTION);
+                ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
  
         //Build output area.
         output = new JTextArea(1, 10);
@@ -123,38 +129,75 @@ public class UpdateChooser extends JPanel {
         splitPane.add(topHalf);
         JPanel listContainer = new JPanel(new GridLayout(1,1));
         add(listContainer, BorderLayout.NORTH);
-        JButton btnNewButton = new JButton("Okay");
+        
+        JPanel panel = new JPanel();
+        add(panel, BorderLayout.SOUTH);
+        JButton btnNewButton = new JButton("Open FST");
+        panel.add(btnNewButton);
+        JProgressBar progressBar;
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setValue(0);
+        progressBar.setStringPainted(true);
+        
+        JButton btnDownloadMeta = new JButton("Download META");
+        JProgressBar progressBar_1 = new JProgressBar();
+        panel.add(progressBar_1);
+        progressBar_1.setValue(0);
+        Progress progress = new Progress();
+        progress.setProgressUpdateListener(new ProgressUpdateListener() {
+			
+			@Override
+			public void updatePerformed(Progress p) {
+				progressBar_1.setValue((int)p.statusInPercent());
+			}
+		});
+        
+        btnDownloadMeta.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		if(progressBar_1.getValue() == 0 || progressBar_1.getValue() == 100){
+	        		progressBar_1.setValue(1);
+	        		progress.clear();
+	        		new Thread(new Runnable(){
+						@Override
+						public void run() {
+							Starter.downloadMeta(output_,progress);
+							JOptionPane.showMessageDialog(window, "Finished");
+						}
+	        			
+	        		}).start();
+	        		
+        		}else{
+        			JOptionPane.showMessageDialog(window, "Operation still in progress, please wait");
+        		}        		
+        	}
+        });
+        panel.add(btnDownloadMeta);
+        
+       
         btnNewButton.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) { 
-        		System.out.println("lol");
+        	public void actionPerformed(ActionEvent e) {        		
         		synchronized (output_) {
         			window.setVisible(false);
                 	output_.notifyAll();
                 }
-        		
         	}
         });
-        
-        
-        add(btnNewButton, BorderLayout.SOUTH);
  
         JPanel bottomHalf = new JPanel(new BorderLayout());
         bottomHalf.add(controlPane, BorderLayout.PAGE_START);
         bottomHalf.add(outputPane, BorderLayout.CENTER);
-        //XXX: next line needed if bottomHalf is a scroll pane:
-        //bottomHalf.setMinimumSize(new Dimension(400, 50));
         
     }
   
-	private static NUSTitleInformation output_;
+	private static List<NUSTitleInformation> output_;
     static List<NUSTitleInformation> list_;
-    public static void createAndShowGUI(List<NUSTitleInformation> list,NUSTitleInformation output) {
+    public static void createAndShowGUI(List<NUSTitleInformation> list,List<NUSTitleInformation> result) {
         //Create and set up the window.
         JFrame frame = new JFrame("Select the title");
  
         //Create and set up the content pane.
         list_ = list;
-        output_ =output;
+        output_ =result;
         UpdateChooser demo = new UpdateChooser(frame);
         demo.setOpaque(true);
         frame.setContentPane(demo);
@@ -178,9 +221,12 @@ public class UpdateChooser extends JPanel {
                 // Find out which indexes are selected.
                 int minIndex = lsm.getMinSelectionIndex();
                 int maxIndex = lsm.getMaxSelectionIndex();
+	            output_.clear();
                 for (int i = minIndex; i <= maxIndex; i++) {
                     if (lsm.isSelectedIndex(i)) {
-                    	output_.init(list_.get(i));                   
+                    	if(!output_.contains(list_.get(i))){
+                    		output_.add(list_.get(i));          
+                    	}
                     }
                 }
             }

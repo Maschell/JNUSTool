@@ -6,6 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 
 import de.mas.jnustool.gui.NUSGUI;
 import de.mas.jnustool.gui.UpdateChooser;
@@ -37,23 +41,37 @@ public class Starter {
 			if( args.length > 1 && args[1].length() == 32){
 				key = args[1].substring(0, 32);
 			}
+			if(titleID != 0){		
+				NUSGUI m = new NUSGUI(new NUSTitle(titleID, key));
+		        m.setVisible(true);			
+			}
 		}else{
-			titleID = getTitleID().getTitleID();
+			for(NUSTitleInformation nus : getTitleID()){
+				
+				final long tID = nus.getTitleID();
+				new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						NUSGUI m = new NUSGUI(new NUSTitle(tID, null));
+				        m.setVisible(true);
+						
+					}
+				}).start();;
+			}
+			
 		}
-		if(titleID != 0){		
-			NUSGUI m = new NUSGUI(new NUSTitle(titleID, key), null);
-	        m.setVisible(true);			
-		}
+		
 		
 	}
 	
 
 
-	private static NUSTitleInformation getTitleID() {
+	private static List<NUSTitleInformation> getTitleID() {
 		List<NUSTitleInformation> updatelist = readUpdateCSV();
-		NUSTitleInformation result = null;
+		List<NUSTitleInformation> result = null;
 		if(updatelist != null){
-			result = new NUSTitleInformation();
+			result = new ArrayList<>();
 			UpdateChooser.createAndShowGUI(updatelist,result);
 			synchronized (result) {			    
 		    	try {
@@ -63,6 +81,9 @@ public class Starter {
 					e.printStackTrace();
 				}
 			}
+		}else{
+			Logger.messageBox("Updatefile is missing or not in config?");
+			System.exit(2);
 		}
 		return result;
 	}
@@ -80,6 +101,7 @@ public class Starter {
 		    while((line = in.readLine()) != null){
 		    	String[] infos = line.split(";");
 		    	if(infos.length != 7) {
+		    		Logger.messageBox("Updatelist is broken!");
 		    		System.out.println("Updatelist is broken!");
 		    		return null;
 		    	}
@@ -96,9 +118,10 @@ public class Starter {
 		    in.close();
 		} catch (IOException | NumberFormatException e) {
 			try {
-				in.close();
+				if(in != null)in.close();
 			} catch (IOException e1) {
 			}
+			Logger.messageBox("Updatelist is broken or missing");
 			System.out.println("Updatelist is broken!");
 			return null;
 		}
@@ -112,6 +135,7 @@ public class Starter {
 		Downloader.URL_BASE =  in.readLine();	
 		String commonkey = in.readLine();		
 		if(commonkey.length() != 32){
+			Logger.messageBox("CommonKey length is wrong");
 			System.out.println("Commonkey length is wrong");
 			System.exit(1);
 		}
@@ -119,6 +143,37 @@ public class Starter {
 		updateCSVPath =  in.readLine();
 		in.close();
 		
+	}
+
+
+
+	public static void downloadMeta(List<NUSTitleInformation> output_, Progress totalProgress) {
+		ForkJoinPool pool = ForkJoinPool.commonPool();
+		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
+		for(NUSTitleInformation nus : output_){
+			final long tID = nus.getTitleID();
+			list.add(pool.submit(new Callable<Boolean>(){
+				@Override
+				public Boolean call() throws Exception {					
+					NUSTitle nus  = new NUSTitle(tID, null);
+					Progress childProgress = new Progress();
+					totalProgress.add(childProgress);
+					nus.decryptFEntries(nus.getFst().getMetaFolder(),childProgress);					
+					return true;
+				}				
+			}));
+		}
+		for(ForkJoinTask<Boolean> task : list){
+			try {
+				task.get();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 }

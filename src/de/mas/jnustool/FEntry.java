@@ -155,13 +155,16 @@ public class FEntry {
 	    return folder;
 	}
 
-	public void downloadAndDecrypt() {
+	public void downloadAndDecrypt(Progress progress) {		
 		createFolder();
 		long titleID = getTitleID();
 		File f = new File(String.format("%016X", titleID) +"/" +getFullPath().substring(1, getFullPath().length()));
 		if(f.exists()){
 			if(f.length() == getFileLength()){
 				Logger.log("Skipping: " + String.format("%8.2f MB ",getFileLength()/1024.0/1024.0)  + getFullPath());
+				if(progress != null){
+					progress.finish();
+				}
 				return;
 			}
 		}
@@ -172,6 +175,7 @@ public class FEntry {
 					if(f.length() == fst.getTmd().contents[this.getContentID()].size){
 						Logger.log("Decrypting: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
 						Decryption decrypt = new Decryption(fst.getTmd().getNUSTitle().getTicket());
+						decrypt.setProgressListener(progress);
 						decrypt.decrypt(this,getDownloadPath());
 						return;
 					}else{
@@ -203,7 +207,7 @@ public class FEntry {
 				}
 			}
 			Logger.log("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
-			Downloader.getInstance().downloadAndDecrypt(this);
+			Downloader.getInstance().downloadAndDecrypt(this,progress);
 			
 			
 		} catch (IOException e) {

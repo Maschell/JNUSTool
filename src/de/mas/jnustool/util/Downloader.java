@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import de.mas.jnustool.FEntry;
+import de.mas.jnustool.Progress;
 
 public class Downloader {
 	private static Downloader instance;
@@ -22,7 +23,7 @@ public class Downloader {
 	}
 	
 	
-	public void downloadAndDecrypt(FEntry toDownload) throws IOException{
+	public void downloadAndDecrypt(FEntry toDownload, Progress progressOfFile) throws IOException{
 		String URL = URL_BASE + "/" + String.format("%016X", toDownload.getTitleID()) +  "/" + String.format("%08X", toDownload.getNUScontentID());		
 		URL url = new URL(URL);
 		String [] path = toDownload.getFullPath().split("/");
@@ -45,7 +46,7 @@ public class Downloader {
 	    connection.connect();
 	    
 	    Decryption decryption = new Decryption(toDownload.getTicket());
-	    
+	    decryption.setProgressListener(progressOfFile);
 	    InputStream input = connection.getInputStream();
 	    FileOutputStream outputStream = new FileOutputStream(String.format("%016X", toDownload.getTitleID()) +"/" + toDownload.getFullPath().substring(1, toDownload.getFullPath().length()));
 	    if(!decryptWithHash){

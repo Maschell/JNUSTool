@@ -12,6 +12,7 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 	private String content_platform;
 	private String company_code;
 	private int region;
+	private byte[] key;
 	
 	
 	public enum Region{
@@ -123,6 +124,21 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 		setID6(n.ID6);
 		setLongnameEN(n.longnameEN);
 		setProduct_code(n.product_code);
+		setKey(n.key);
 	}
+
+	public byte[] getKey() {
+		return key;
+	}
+
+	public void setKey(byte[] key) {
+		this.key = key;
+	}
+	
+	@Override
+	public boolean equals(Object o){		
+		return titleID == ((NUSTitleInformation)o).titleID;
+	}
+	
 
 }

@@ -19,6 +19,7 @@ public class FST {
 	int totalEntries = 0;
 	int dirEntries = 0;
 	public FEntry metaFENtry;
+	public List<FEntry> metaFolder = new ArrayList<>();
 	private Directory FSTDirectory = new Directory("root");
 	
 	private Directory contentDirectory = new Directory("root");
@@ -165,6 +166,8 @@ public class FST {
 			this.totalContentSize += fileLength;
 			if(in_nus_title)this.totalContentSizeInNUS += fileLength;
 			
+			boolean metafolder = false;
+			
 			List<String> pathList = new ArrayList<>();
 			//getting the full path of entry
 			if(dir)
@@ -180,7 +183,7 @@ public class FST {
 				StringBuilder sb = new StringBuilder();
 				int k = 0;
 				int nameoffoff,nameoff_entrypath;
-
+				
 				for( j=0; j<level; ++j )
 				{
 					nameoffoff = Util.getIntFromBytes(decrypteddata,base_offset+Entry[j]*0x10);
@@ -188,9 +191,11 @@ public class FST {
 					nameoff_entrypath = nameOff + nameoffoff;
 					while(decrypteddata[nameoff_entrypath + k] != 0){k++;}
 					String tmpname = new String(Arrays.copyOfRange(decrypteddata,nameoff_entrypath, nameoff_entrypath + k));
+					if(j==1 && tmpname.equals("meta")){
+						metafolder = true;
+					}
 					if(!tmpname.equals("")){
-						pathList.add(tmpname);
-						
+						pathList.add(tmpname);						
 					}					
 						
 					sb.append(tmpname);
@@ -204,6 +209,9 @@ public class FST {
 			fileEntries.add(tmp);
 			if(filename.equals("meta.xml")){
 				metaFENtry = tmp;
+			}
+			if(metafolder){
+				metaFolder.add(tmp);
 			}
 			//Logger.log(fileEntries.get(i));
 		}
@@ -231,6 +239,10 @@ public class FST {
 		this.totalContentSizeInNUS = totalContentSizeInNUS;
 	}
 
+	public List<FEntry> getMetaFolder() {
+		return metaFolder;
+	}
+	
 
 	public List<FEntry> getFileEntries() {
 		return fileEntries;

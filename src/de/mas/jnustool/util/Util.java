@@ -23,7 +23,7 @@ public class Util {
 	{
 	  StringBuilder hex = new StringBuilder(ba.length * 2);
 	  for(byte b : ba){
-	    hex.append(String.format("%X", b));
+	    hex.append(String.format("%02X", b));
 	  }
 	  return hex.toString();
 	}

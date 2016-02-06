@@ -214,15 +214,14 @@ public class NUSTitle {
 		this.titleID = titleId;		
 	}
 
-	public void decryptFEntries(List<FEntry> list) {
+	public void decryptFEntries(List<FEntry> list,Progress progress) {
 		ForkJoinPool pool = ForkJoinPool.commonPool();
 		List<FEntryDownloader> dlList = new ArrayList<>();
 		for(FEntry f : list){
 			if(!f.isDir() &&  f.isInNUSTitle()){                    			
-				dlList.add(new FEntryDownloader(f));
+				dlList.add(new FEntryDownloader(f,progress));
 			}
 		}
-		
 		pool.invokeAll(dlList);
 		Logger.log("Done!");
 	}
