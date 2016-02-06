@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="JNusTool:jar">
+    <output-path>$PROJECT_DIR$/out</output-path>
+    <root id="archive" name="JNusTool.jar">
+      <element id="module-output" name="JNusTool" />
+    </root>
+  </artifact>
+</component>
