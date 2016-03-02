@@ -18,8 +18,9 @@ public class FEntryDownloader implements Callable<Integer>
 	private void createProgressListener(Progress fatherProgress) {
 		if(fatherProgress != null){
 			progress = new Progress();
-			progress.setTotal(f.getFileLength());
-			fatherProgress.add(progress);	
+			fatherProgress.add(progress);
+			progress.addTotal(f.getFileLength());
+			
 		}
 	}
 	@Override

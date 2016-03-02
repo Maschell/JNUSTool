@@ -21,12 +21,12 @@ public class Starter {
 
 	private static String updateCSVPath;
 	
-	public static void main(String[] args) {		
-		Logger.log("JNUSTool 0.0.4 - pre alpha - by Maschell");
+	public static void main(String[] args) {
+		
+		Logger.log("JNUSTool 0.0.5 - alpha - by Maschell");
 		Logger.log("");
 		try {
 			readConfig();
-			
 		} catch (IOException e) {
 			System.err.println("Error while reading config! Needs to be:");
 			System.err.println("DOWNLOAD URL BASE");
@@ -42,7 +42,7 @@ public class Starter {
 				key = args[1].substring(0, 32);
 			}
 			if(titleID != 0){		
-				NUSGUI m = new NUSGUI(new NUSTitle(titleID, key));
+				NUSGUI m = new NUSGUI(new NUSTitle(titleID,-1, key));
 		        m.setVisible(true);			
 			}
 		}else{
@@ -53,16 +53,12 @@ public class Starter {
 					
 					@Override
 					public void run() {
-						NUSGUI m = new NUSGUI(new NUSTitle(tID, null));
-				        m.setVisible(true);
-						
+						NUSGUI m = new NUSGUI(new NUSTitle(tID,nus.getSelectedVersion(), null));
+				        m.setVisible(true);						
 					}
 				}).start();;
-			}
-			
+			}			
 		}
-		
-		
 	}
 	
 
@@ -100,9 +96,9 @@ public class Starter {
 			String line;
 		    while((line = in.readLine()) != null){
 		    	String[] infos = line.split(";");
-		    	if(infos.length != 7) {
+		    	if(infos.length != 8) {
 		    		Logger.messageBox("Updatelist is broken!");
-		    		System.out.println("Updatelist is broken!");
+		    		Logger.log("Updatelist is broken!");
 		    		return null;
 		    	}
 		    	long titleID = Util.StringToLong(infos[0].replace("-", ""));
@@ -112,7 +108,9 @@ public class Starter {
 		    	String  product_code = infos[4];
 		    	String  ID6 = infos[5];
 		    	String  longnameEN = infos[6];
-		    	NUSTitleInformation info = new NUSTitleInformation(titleID, longnameEN, ID6, product_code, content_platform, company_code, region);	
+		    	String[]  versions = infos[7].split(",");
+		    	NUSTitleInformation info = new NUSTitleInformation(titleID, longnameEN, ID6, product_code, content_platform, company_code, region,versions);
+		    	
 		    	list.add(info);
 		    }
 		    in.close();
@@ -122,7 +120,7 @@ public class Starter {
 			} catch (IOException e1) {
 			}
 			Logger.messageBox("Updatelist is broken or missing");
-			System.out.println("Updatelist is broken!");
+			Logger.log("Updatelist is broken!");
 			return null;
 		}
 		return list;		
@@ -136,7 +134,7 @@ public class Starter {
 		String commonkey = in.readLine();		
 		if(commonkey.length() != 32){
 			Logger.messageBox("CommonKey length is wrong");
-			System.out.println("Commonkey length is wrong");
+			Logger.log("Commonkey length is wrong");
 			System.exit(1);
 		}
 		Util.commonKey =  Util.hexStringToByteArray(commonkey);
@@ -145,20 +143,37 @@ public class Starter {
 		
 	}
 
-
+	public static boolean deleteFolder(File element) {
+	    if (element.isDirectory()) {	    	
+	        for (File sub : element.listFiles()) {
+	        	if(sub.isFile()){
+	        		return false;
+	        	}
+	        }
+	        for (File sub : element.listFiles()) {
+	        	if(!deleteFolder(sub)) return false;
+	        }	        
+	    }
+	    element.delete();	    
+	    return true;
+	}
 
 	public static void downloadMeta(List<NUSTitleInformation> output_, Progress totalProgress) {
 		ForkJoinPool pool = ForkJoinPool.commonPool();
 		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
+		
 		for(NUSTitleInformation nus : output_){
 			final long tID = nus.getTitleID();
 			list.add(pool.submit(new Callable<Boolean>(){
 				@Override
-				public Boolean call() throws Exception {					
-					NUSTitle nus  = new NUSTitle(tID, null);
+				public Boolean call() throws Exception {
+					NUSTitle nusa  = new NUSTitle(tID,nus.getSelectedVersion(),Util.ByteArrayToString(nus.getKey()));
 					Progress childProgress = new Progress();
+					
 					totalProgress.add(childProgress);
-					nus.decryptFEntries(nus.getFst().getMetaFolder(),childProgress);					
+					deleteFolder(new File(nusa.getLongNameFolder() + "/updates"));
+					nusa.setTargetPath(nusa.getLongNameFolder());
+					nusa.decryptFEntries(nusa.getFst().getMetaFolder(),childProgress);					
 					return true;
 				}				
 			}));
@@ -174,6 +189,38 @@ public class Starter {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public static void downloadEncrypted(List<NUSTitleInformation> output_, Progress progress) {
+		ForkJoinPool pool = ForkJoinPool.commonPool();
+		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
+		
+		for(NUSTitleInformation nus : output_){
+			final long tID = nus.getTitleID();
+			list.add(pool.submit(new Callable<Boolean>(){
+				@Override
+				public Boolean call() throws Exception {
+					NUSTitle nusa  = new NUSTitle(tID,nus.getSelectedVersion(), Util.ByteArrayToString(nus.getKey()));
+					Progress childProgress = new Progress();					
+					progress.add(childProgress);
+					nusa.downloadEncryptedFiles(progress);
+							
+					return true;
+				}				
+			}));
+		}
+		for(ForkJoinTask<Boolean> task : list){
+			try {
+				task.get();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 	}
 
 }

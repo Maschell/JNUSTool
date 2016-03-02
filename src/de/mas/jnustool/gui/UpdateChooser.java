@@ -1,31 +1,42 @@
 package de.mas.jnustool.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Collections;
+import java.util.EventObject;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JList;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.CellEditorListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.TableCellEditor;
 
 import de.mas.jnustool.Logger;
 import de.mas.jnustool.Progress;
@@ -45,25 +56,50 @@ public class UpdateChooser extends JPanel {
     ListSelectionModel listSelectionModel;
     public UpdateChooser(JFrame window) {
         super(new BorderLayout());        
-        setSize(800, 600);
+        setSize(800, 650);
 
         Collections.sort(list_);
         
         output_.add(list_.get(0));
-        String[] columnNames = { "TitleID", "Region", "Name" };
+        String[] columnNames = { "TitleID", "Region", "Name","version"};
         String[][] tableData = new String[list_.size()][];
         int i = 0;
+        HashMap<Integer,JComboBox<String>> comboboxes = new HashMap<>();
         for(NUSTitleInformation n: list_){
-        	tableData[i] = new String[3];
+        	tableData[i] = new String[4];
         	tableData[i][0] = n.getTitleIDAsString();
         	tableData[i][1] = n.getRegionAsRegion().toString();    
         	tableData[i][2] = n.getLongnameEN();
-        	i++;
+        	tableData[i][3] = n.getLatestVersion();        	
+        	
+        	JComboBox<String> comboBox = new JComboBox<>();
+            for(String v : n.getAllVersions()){
+            	comboBox.addItem(v);
+            }
+            final int position = i;
+            comboBox.addItemListener(new ItemListener() {
+                public void itemStateChanged(ItemEvent e) {
+                	list_.get(position).setSelectedVersion((String) e.getItem());
+                }
+            });
+            comboboxes.put(i,comboBox);
+            
+            i++;
         }
         
  
         table = new JTable(tableData, columnNames);
         
+          
+        EachRowEditor rowEditor = new EachRowEditor(table);
+		
+		for (Entry<Integer, JComboBox<String>> entry : comboboxes.entrySet())
+		{
+			rowEditor.setEditorAt(entry.getKey(), new DefaultCellEditor(entry.getValue()));
+		}
+
+        
+        table.getColumn("version").setCellEditor(rowEditor);
    
 
         //table.setModel(tableModel);
@@ -85,16 +121,7 @@ public class UpdateChooser extends JPanel {
         	
 	    table.setSelectionModel(listSelectionModel);
 	
-	    table.addMouseListener(new MouseAdapter() {
-	        public void mousePressed(MouseEvent me) {
-	            if (me.getClickCount() == 2) {
-	            	synchronized (output_) {
-	        			window.setVisible(false);
-	                	output_.notifyAll();
-	                }
-	            }
-	        }
-	    });
+	   
 	    
 	    JScrollPane tablePane = new JScrollPane(table);
         //Build control area (use default FlowLayout).
@@ -141,6 +168,7 @@ public class UpdateChooser extends JPanel {
         progressBar.setStringPainted(true);
         
         JButton btnDownloadMeta = new JButton("Download META");
+        JButton btnDownloadEncrypted = new JButton("Download Enctrypted");
         JProgressBar progressBar_1 = new JProgressBar();
         panel.add(progressBar_1);
         progressBar_1.setValue(0);
@@ -153,6 +181,7 @@ public class UpdateChooser extends JPanel {
 			}
 		});
         
+        
         btnDownloadMeta.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(!progress.isInProgress()){
@@ -161,6 +190,8 @@ public class UpdateChooser extends JPanel {
 	        		new Thread(new Runnable(){
 						@Override
 						public void run() {
+							progressBar_1.setValue(0);
+							progress.clear();
 							Starter.downloadMeta(output_,progress);
 							progress.operationFinish();
 							Logger.messageBox("Finished");							
@@ -175,15 +206,54 @@ public class UpdateChooser extends JPanel {
         });
         panel.add(btnDownloadMeta);
         
-       
-        btnNewButton.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {        		
-        		synchronized (output_) {
-        			window.setVisible(false);
-                	output_.notifyAll();
-                }
+        btnDownloadEncrypted.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		if(!progress.isInProgress()){
+	        		progress.clear();
+	        		progress.operationStart();
+	        		new Thread(new Runnable(){
+						@Override
+						public void run() {
+							progressBar_1.setValue(0);
+							progress.clear();
+							Starter.downloadEncrypted(output_,progress);
+							progress.operationFinish();
+							Logger.messageBox("Finished");							
+						}
+	        			
+	        		}).start();
+	        		
+        		}else{
+        			Logger.messageBox("Operation still in progress, please wait");
+        		}        		
         	}
         });
+        panel.add(btnDownloadEncrypted);
+        
+       
+        btnNewButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {  
+        		if(!progress.isInProgress()){
+	        		synchronized (output_) {
+	        			window.setVisible(false);
+	                	output_.notifyAll();
+	                }
+        		}
+        	}
+        });
+        
+        table.addMouseListener(new MouseAdapter() {
+	        public void mousePressed(MouseEvent me) {
+	        	if(!progress.isInProgress()){
+	            if (me.getClickCount() == 2) {
+	            	synchronized (output_) {
+	        			window.setVisible(false);
+	                	output_.notifyAll();
+	                }
+	            }
+	        	}
+	        }
+	    });
  
         JPanel bottomHalf = new JPanel(new BorderLayout());
         bottomHalf.add(controlPane, BorderLayout.PAGE_START);
@@ -206,7 +276,7 @@ public class UpdateChooser extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        
         //Display the window.
-        frame.setSize(610, 600);
+        frame.setSize(672, 600);
 
         frame.setResizable(false);
         frame.setVisible(true);
@@ -234,5 +304,94 @@ public class UpdateChooser extends JPanel {
             }
             
         }
+    }
+    /**
+     * each row TableCellEditor
+     * 
+     * @version 1.1 09/09/99
+     * @author Nobuo Tamemasa
+     */
+
+    class EachRowEditor implements TableCellEditor {
+      protected Hashtable editors;
+
+      protected TableCellEditor editor, defaultEditor;
+
+      JTable table;
+
+      /**
+       * Constructs a EachRowEditor. create default editor
+       * 
+       * @see TableCellEditor
+       * @see DefaultCellEditor
+       */
+      public EachRowEditor(JTable table) {
+        this.table = table;
+        editors = new Hashtable();
+        defaultEditor = new DefaultCellEditor(new JTextField());
+      }
+
+      /**
+       * @param row
+       *            table row
+       * @param editor
+       *            table cell editor
+       */
+      public void setEditorAt(int row, TableCellEditor editor) {
+        editors.put(new Integer(row), editor);
+      }
+
+      public Component getTableCellEditorComponent(JTable table, Object value,
+          boolean isSelected, int row, int column) {
+        //editor = (TableCellEditor)editors.get(new Integer(row));
+        //if (editor == null) {
+        //  editor = defaultEditor;
+        //}
+        return editor.getTableCellEditorComponent(table, value, isSelected,
+            row, column);
+      }
+
+      public Object getCellEditorValue() {
+        return editor.getCellEditorValue();
+      }
+
+      public boolean stopCellEditing() {
+        return editor.stopCellEditing();
+      }
+
+      public void cancelCellEditing() {
+        editor.cancelCellEditing();
+      }
+
+      public boolean isCellEditable(EventObject anEvent) {
+        selectEditor((MouseEvent) anEvent);
+        return editor.isCellEditable(anEvent);
+      }
+
+      public void addCellEditorListener(CellEditorListener l) {
+        editor.addCellEditorListener(l);
+      }
+
+      public void removeCellEditorListener(CellEditorListener l) {
+        editor.removeCellEditorListener(l);
+      }
+
+      public boolean shouldSelectCell(EventObject anEvent) {
+        selectEditor((MouseEvent) anEvent);
+        return editor.shouldSelectCell(anEvent);
+      }
+
+      protected void selectEditor(MouseEvent e) {
+        int row;
+        if (e == null) {
+          row = table.getSelectionModel().getAnchorSelectionIndex();
+        } else {
+          row = table.rowAtPoint(e.getPoint());
+        }
+        editor = (TableCellEditor) editors.get(new Integer(row));
+        if (editor == null) {
+          editor = defaultEditor;
+        }
+      }
     }
 }

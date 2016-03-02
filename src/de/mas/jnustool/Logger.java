@@ -10,7 +10,7 @@ public class Logger {
 	public static void log(String string) {
 		NUSGUI.output.append(string + "\n");
 		NUSGUI.output.setCaretPosition(NUSGUI.output.getDocument().getLength());
-		//System.out.println(string);
+		System.out.println(string);
 		
 	}
 

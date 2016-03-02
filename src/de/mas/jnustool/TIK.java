@@ -3,6 +3,7 @@ package de.mas.jnustool;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 import de.mas.jnustool.util.Decryption;
 import de.mas.jnustool.util.Util;
@@ -11,6 +12,9 @@ public class TIK {
 		public static int KEY_LENGTH = 16;
 		private byte[] encryptedKey = new byte[16];		
 		private byte[] decryptedKey = new byte[16];
+		
+		public byte[] cert0 = new byte[0x400];
+		public byte[] cert1 = new byte[0x300];
 		
 		public TIK(File cetk,long titleid) throws IOException{
 			parse(cetk);
@@ -33,14 +37,29 @@ public class TIK {
 			decryptedKey = decryption.decrypt(encryptedKey);	
 		}
 
-		private void parse(byte[] cetk) throws IOException {			
-			System.arraycopy(cetk, 0x1bf, this.encryptedKey, 0,16);
+		private void parse(byte[] cetk) throws IOException {
+			if(cetk != null){
+				System.arraycopy(cetk, 0x1bf, this.encryptedKey, 0,16);
+				if(cetk.length >= 0x650 + 0x400){
+					cert0 = Arrays.copyOfRange(cetk, 0x650, 0x650 + 0x400);
+					cert1 = Arrays.copyOfRange(cetk, 0x350, 0x350 + 0x300);
+				}else{
+					Logger.log("No certs for TIK found. File too short!");
+				}
+			}
+			
 		}
 		
 		private void parse(File cetk) throws IOException {			
 			RandomAccessFile f = new RandomAccessFile(cetk, "r");		
 			f.seek(0x1bf);
-			f.read(this.encryptedKey, 0, 16);
+			f.read(this.encryptedKey, 0, 16);	
+			
+			f.seek(0x650);			
+			f.read(cert0, 0, 0x400);
+			f.seek(0x350);
+			f.read(cert1, 0, 0x300);
+			
 			f.close();
 		}
 						
@@ -66,6 +85,9 @@ public class TIK {
 
 		@Override
 		public String toString(){		
-			return "encrypted key: " +  Util.ByteArrayToString(encryptedKey)+ " decrypted key: " +  Util.ByteArrayToString(decryptedKey); 
+			String result = "Encrypted key: " +  Util.ByteArrayToString(encryptedKey)+ " Decrypted key: " +  Util.ByteArrayToString(decryptedKey) + "\n"; 
+			result += "cert0:" + Util.ByteArrayToString(cert0) + "\n";
+			result += "cert1:" + Util.ByteArrayToString(cert1) + "\n";
+			return result;
 		}
 }

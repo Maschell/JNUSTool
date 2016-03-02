@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 
-import de.mas.jnustool.util.Downloader;
-import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
 
 public class TitleMetaData {
@@ -28,8 +29,8 @@ public class TitleMetaData {
 	byte[]			SHA2 				= 	new byte[32];			// 0x1E4
 	ContentInfo[] 	contentInfos		= 	new ContentInfo[64];	// 0x1E4
 	Content[] 		contents;										// 0x1E4 
-	
-	
+	byte[] 			cert				 =  new byte[0x300];
+
 	private NUSTitle nus;
 	
 	private long totalContentSize;
@@ -112,8 +113,12 @@ public class TitleMetaData {
 			byte[] buffer = new byte[0x20];	//  16    0xB14
 			f.read(buffer,0, 0x20);
 			
-			this.contents[i] = new Content(ID,index,type,size,buffer);
-		}		
+			this.contents[i] = new Content(ID,index,type,size,buffer,this);
+		}
+		
+		if(f.read(cert,0, 0x300) != 0x300){
+			Logger.log("Error reading TMD cert");
+		}
 		f.close();
 	}
 	
@@ -136,6 +141,7 @@ public class TitleMetaData {
 		sb.append("contentCount:		"  	+ contentCount +"\n");
 		sb.append("bootIndex:		"  	+ bootIndex +"\n");
 		sb.append("SHA2:			"  	+ Util.ByteArrayToString(SHA2) +"\n");
+		sb.append("cert:			"  	+ Util.ByteArrayToString(cert) +"\n");
 		sb.append("contentInfos:		\n");
 		for(int i = 0; i<contents.length-1;i++){
 			sb.append("		" + contentInfos[i] +"\n");
@@ -157,36 +163,22 @@ public class TitleMetaData {
 		return totalContentSize;
 	}
 	
-	public void downloadContents() throws IOException{
+	public boolean isUpdate() {
+		return (titleID & 0x5000000000000L)  == 0x5000000000000L;
+	}
+	
+	public void downloadContents(Progress progress) throws IOException{
 		String tmpPath = getContentPath();
 		File f = new File(tmpPath);
 		if(!f.exists())f.mkdir();
 		
+		ForkJoinPool pool = ForkJoinPool.commonPool();
+		List<ContentDownloader> dlList = new ArrayList<>();
 		for(Content c : contents){
-			if(c != contents[0]){
-				f = new File(tmpPath + "/" + String.format("%08X", c.ID ) + ".app");
-				if(f.exists()){
-					if(f.length() == c.size){
-						Logger.log("Skipping Content: " + String.format("%08X", c.ID));						
-					}else{
-						if(Settings.downloadWhenCachedFilesMissingOrBroken){
-							Logger.log("Content " +String.format("%08X", c.ID) + " is broken. Downloading it again.");
-							Downloader.getInstance().downloadContent(titleID,c.ID,tmpPath);	
-						}else{
-							if(Settings.skipBrokenFiles){
-								Logger.log("Content " +String.format("%08X", c.ID) + " is broken. Ignoring it.");								
-							}else{
-								Logger.log("Content " +String.format("%08X", c.ID) + " is broken. Downloading not allowed.");
-								System.exit(2);
-							}					
-						}
-					}
-				}else{
-					Logger.log("Download Content: " + String.format("%08X", c.ID));
-					Downloader.getInstance().downloadContent(titleID,c.ID,tmpPath);		
-				}
-			}
+			dlList.add(new ContentDownloader(c,progress));			
 		}
+		pool.invokeAll(dlList);
+		Logger.log("Done!");
 			
 	}
 

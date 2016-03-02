@@ -1,5 +1,6 @@
 package de.mas.jnustool.util;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -21,6 +22,7 @@ public class Util {
 	
 	public static String ByteArrayToString(byte[] ba)
 	{
+	  if(ba == null) return null;
 	  StringBuilder hex = new StringBuilder(ba.length * 2);
 	  for(byte b : ba){
 	    hex.append(String.format("%02X", b));
@@ -57,6 +59,28 @@ public class Util {
 		}catch(NumberFormatException e){
 			System.err.println("Invalid Title ID");
 			return 0L;
+		}
+	}
+	
+	public static void createSubfolder(String folder){
+		
+		String [] path = folder.split("/");		
+		File folder_ = null;
+		String foldername = new String();
+		if(path.length == 1){
+			folder_ = new File(folder);				
+		    if(!folder_.exists()){
+		    	folder_.mkdir();	    	    	
+		    }
+		}
+		for(int i = 0;i<path.length-1;i++){
+			if(!path[i].equals("")){	    		
+				foldername += path[i] + "/";
+				folder_ = new File(foldername);				
+			    if(!folder_.exists()){
+			    	folder_.mkdir();	    	    	
+			    }
+			}	    	
 		}
 	}
 }

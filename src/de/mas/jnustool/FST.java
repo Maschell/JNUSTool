@@ -30,8 +30,7 @@ public class FST {
 		buildDirectories();
 	}	
 
-	private void buildDirectories() {
-	
+	private void buildDirectories() {	
 		 String contentfolder = "";
 		 Directory curContent = contentDirectory;
 		 for(FEntry f : getFileEntries()){			 
@@ -60,8 +59,7 @@ public class FST {
 					}				
 					if(i==f.getPathList().size()){
 						curContent.addFile(f);
-					}
-					
+					}					
 						
 					//FST
 					if(current.containsFolder(s)){    				
@@ -77,12 +75,7 @@ public class FST {
 				 }
 			 }
 		 }
-		 
-		
-		 
 	}
-	
-
 
 	private void parse(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
 		
@@ -120,8 +113,7 @@ public class FST {
 				{					
 					level--;
 				}
-			}
-			
+			}			
 			
 			int offset = base_offset + i*0x10;
 			
@@ -216,24 +208,19 @@ public class FST {
 			//Logger.log(fileEntries.get(i));
 		}
 		
-	}
-	
-	
+	}	
 	
 	public long getTotalContentSize() {
 		return totalContentSize;
 	}
 
-
 	public void setTotalContentSize(long totalContentSize) {
 		this.totalContentSize = totalContentSize;
 	}
 
-
 	public long getTotalContentSizeInNUS() {
 		return totalContentSizeInNUS;
 	}
-
 
 	public void setTotalContentSizeInNUS(long totalContentSizeInNUS) {
 		this.totalContentSizeInNUS = totalContentSizeInNUS;
@@ -241,38 +228,31 @@ public class FST {
 
 	public List<FEntry> getMetaFolder() {
 		return metaFolder;
-	}
-	
+	}	
 
 	public List<FEntry> getFileEntries() {
 		return fileEntries;
 	}
 
-
 	public void setFileEntries(List<FEntry> fileEntries) {
 		this.fileEntries = fileEntries;
 	}
-
 
 	public int getTotalContentCount() {
 		return totalContentCount;
 	}
 
-
 	public void setTotalContentCount(int totalContentCount) {
 		this.totalContentCount = totalContentCount;
 	}
-
 
 	public int getTotalEntries() {
 		return totalEntries;
 	}
 
-
 	public void setTotalEntries(int totalEntries) {
 		this.totalEntries = totalEntries;
 	}
-
 
 	public int getDirEntries() {
 		return dirEntries;
@@ -283,12 +263,10 @@ public class FST {
 		this.dirEntries = dirEntries;
 	}
 
-
 	@Override
 	public String toString(){		
 		return "entryCount: " +  totalContentCount+ " entries: " +  totalEntries; 
 	}
-
 
 	public int getFileCount() {
 		int i = 0;
@@ -315,8 +293,6 @@ public class FST {
 	public Directory getContentDirectory() {
 		return contentDirectory;
 	}
-	
-	
 
 	public TitleMetaData getTmd() {
 		return tmd;

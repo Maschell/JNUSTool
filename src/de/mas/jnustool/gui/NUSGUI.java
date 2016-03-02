@@ -9,6 +9,7 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -21,8 +22,6 @@ import de.mas.jnustool.Logger;
 import de.mas.jnustool.NUSTitle;
 import de.mas.jnustool.Progress;
 import de.mas.jnustool.ProgressUpdateListener;
-
-import javax.swing.JProgressBar;
 
 public class NUSGUI extends JFrame {
 

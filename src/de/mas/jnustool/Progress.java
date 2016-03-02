@@ -2,42 +2,63 @@ package de.mas.jnustool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Progress {
-	private long total;
-	private long current;
+	private AtomicLong total = new AtomicLong();
+	private AtomicLong current  = new AtomicLong();
 	private ProgressUpdateListener progressUpdateListener = null;
 	List<Progress> children = new ArrayList<>();
 	Progress father = null;
+	private AtomicLong totalChildren = new AtomicLong();
+	private AtomicLong currentChildren = new AtomicLong();
 
 	
 	public long getTotalOfSingle() {
-		return total;
+		return total.get();
 	}
-
-	public void setTotal(long total) {
-		this.total = total;
+	
+	private void setTotalOfSingle(long total) {
+		this.total.set(total);
 	}
 
 	public long getCurrentOfSingle() {
-		return current;
+		return current.get();
 	}
 
-	public void setCurrent(long current) {
-		this.current = current;
+	private void setCurrent(long current) {
+		this.current.set(current);		
 		update();	
 	}
-
-	public void addCurrent(int i) {		
-		if(this.current + i > getTotalOfSingle()){
-			setCurrent(getTotalOfSingle());
-		}else{
-			setCurrent(getCurrent() + i);
-		}
+	
+	public void addTotal(long i) {		
+		setTotalOfSingle(getTotalOfSingle() + i);
+		if(father != null) father.addTotalChildren(i);
 		
+	}
+
+	private void addCurrentChildren(long i) {
+		if(father != null) father.addCurrentChildren(i);
+		this.currentChildren.addAndGet(i);	
 		
 	}
 	
+	private void addTotalChildren(long i) {
+		if(father != null){
+			father.addTotalChildren(i);
+		}
+		this.totalChildren.addAndGet(i);
+	}
+
+	public void addCurrent(int i) {
+		if(this.current.get() + i > getTotalOfSingle()){
+			setCurrent(getTotalOfSingle());
+		}else{
+			setCurrent(getCurrentOfSingle() + i);
+			if(father != null) father.addCurrentChildren(i);
+		}
+	}
+
 	private void update() {		
 		if(father != null) father.update();
 		
@@ -48,7 +69,12 @@ public class Progress {
 
 	public void add(Progress progress) {
 		progress.setFather(this);
+		addChildrenTotal(progress.getTotalOfSingle());
 		children.add(progress);		
+	}
+
+	private void addChildrenTotal(long totalOfSingle) {
+		this.totalChildren.addAndGet(totalOfSingle);		
 	}
 
 	private void setFather(Progress progressListener) {
@@ -56,32 +82,34 @@ public class Progress {
 	}
 
 	public long getCurrent() {
-		long tmp = getCurrentOfSingle();
-		for(Progress p : children){
-			tmp +=p.getCurrent();
-		}
-		return tmp;
+		return this.currentChildren.get() + this.current.get();
 	}
 
-	public long getTotal() {
-		long tmp = getTotalOfSingle();
-		for(Progress p : children){
-			tmp +=p.getTotal();
-		}
-		return tmp;
+	
+	public long getTotal() {		
+		return this.totalChildren.get() + this.total.get();
 	}
+	
+	
+	public void setTotal(long total) {		
+		this.total.set(total);
+	}
+
 	
 	public void setProgressUpdateListener(ProgressUpdateListener progressUpdateListener) {
 		this.progressUpdateListener = progressUpdateListener;
 	}
 
 	public void clear() {
-		setCurrent(0);
-		setTotal(0);
+		current.set(0);
+		currentChildren.set(0);
+		total.set(0);
+		totalChildren.set(0);
+		father = null;
 		children = new ArrayList<>();
 	}
 
-	public int statusInPercent() {		
+	public int statusInPercent() {
 		return (int) ((getCurrent()*1.0)/(getTotal()*1.0)*100);
 	}
 
@@ -100,6 +128,12 @@ public class Progress {
 	
 	public boolean isInProgress(){
 		return inprogress;
+	}
+
+	public void resetCurrent() {
+		while(getCurrentOfSingle() > 0){
+			addCurrent((int)getCurrentOfSingle() * (-1));
+		}
 	}
 	
 }

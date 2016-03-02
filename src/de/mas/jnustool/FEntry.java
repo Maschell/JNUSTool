@@ -7,6 +7,7 @@ import java.util.List;
 import de.mas.jnustool.util.Decryption;
 import de.mas.jnustool.util.Downloader;
 import de.mas.jnustool.util.Settings;
+import de.mas.jnustool.util.Util;
 
 public class FEntry {
 	private FST fst;
@@ -125,28 +126,11 @@ public class FEntry {
 		NUScontentID = nUScontentID;
 	}
 	
-	private void createFolder() {
-		long titleID = getTitleID();
-		String [] path = getFullPath().split("/");	   
-		File f = new File (String.format("%016X", titleID));
-		if(!f.exists())f.mkdir();
-		
-	    String folder = String.format("%016X", titleID) +"/";
-	    File folder_ = null;
-	    for(int i = 0;i<path.length-1;i++){
-	    	if(!path[i].equals("")){	    		
-	    		folder += path[i] + "/";
-	    		folder_ = new File(folder);
-	    	    if(!folder_.exists()){
-	    	    	folder_.mkdir();	    	    	
-	    	    }
-	    	}	    	
-	    }
-		
-	}
+	
 	public String getDownloadPath(){
+		
 		String [] path = getFullPath().split("/");	   
-		String folder = String.format("%016X", getTitleID()) +"/";
+		String folder = getTargetPath() +"/";
 	    for(int i = 0;i<path.length-1;i++){
 	    	if(!path[i].equals("")){	    		
 	    		folder += path[i] + "/";	    		
@@ -155,10 +139,10 @@ public class FEntry {
 	    return folder;
 	}
 
-	public void downloadAndDecrypt(Progress progress) {		
-		createFolder();
-		long titleID = getTitleID();
-		File f = new File(String.format("%016X", titleID) +"/" +getFullPath().substring(1, getFullPath().length()));
+	public void downloadAndDecrypt(Progress progress) {
+		Util.createSubfolder(fst.getTmd().getNUSTitle().getTargetPath() + getFullPath());
+		
+		File f = new File(fst.getTmd().getNUSTitle().getTargetPath() + getFullPath());
 		if(f.exists()){
 			if(f.length() == getFileLength()){
 				Logger.log("Skipping: " + String.format("%8.2f MB ",getFileLength()/1024.0/1024.0)  + getFullPath());
@@ -188,7 +172,9 @@ public class FEntry {
 								Logger.log("Ignoring the missing file: " + this.getFileName());
 							}
 						}else{
-							Logger.log("Content missing. Downloading the file from the server: " + this.getFileName());
+							if(fst.getTmd().contents[this.getContentID()].error_output_done.addAndGet(1) == 1){
+								Logger.log("Content " + String.format("%08X",getContentID()) + " missing. Downloading the files from the server");
+							}
 						}
 						
 					}
@@ -202,12 +188,14 @@ public class FEntry {
 							Logger.log("Ignoring the missing file: " + this.getFileName());
 						}
 					}else{
-						Logger.log("Content missing. Downloading the file from the server: " + this.getFileName());
+						if(fst.getTmd().contents[this.getContentID()].error_output_done.addAndGet(1) == 1){
+							Logger.log("Content " + String.format("%08X",getContentID())  + " missing. Downloading the files from the server");
+						}
 					}
 				}
 			}
 			Logger.log("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
-			Downloader.getInstance().downloadAndDecrypt(this,progress);
+			Downloader.getInstance().downloadAndDecrypt(this,progress,false);
 			
 			
 		} catch (IOException e) {
@@ -235,6 +223,14 @@ public class FEntry {
 
 	public TIK getTicket() {		
 		return fst.getTmd().getNUSTitle().getTicket();
+	}
+	
+	public String getTargetPath(){
+		return fst.getTmd().getNUSTitle().getTargetPath();
+	}
+
+	public byte[] downloadAsByteArray() throws IOException {
+		return Downloader.getInstance().downloadAndDecrypt(this,null,true);
 	}
 
 	

@@ -52,3 +52,5 @@ bin
 UpdateGrabber.java
 updatetitles.csv
 src/de/mas/jnustool/StarterPRIATE.java
+jar/tmp*
+src/de/mas/jnustool/XMLGEN.java

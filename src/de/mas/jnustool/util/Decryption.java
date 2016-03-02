@@ -174,7 +174,7 @@ public class Decryption {
         ByteArrayBuffer overflow = new ByteArrayBuffer(BLOCKSIZE);
         if(progressListener != null){
         	progressListener.setTotal(toDownload.getFileLength());
-        	progressListener.setCurrent(0);
+        	progressListener.resetCurrent();
         }
         do{ 
         		inBlockBuffer = getChunkFromStream(inputStream,blockBuffer,overflow,BLOCKSIZE);
@@ -219,7 +219,7 @@ public class Decryption {
 	    
 	    if(progressListener != null){
         	progressListener.setTotal(toDownload.getFileLength()/HASHBLOCKSIZE*BLOCKSIZE);
-        	progressListener.setCurrent(0);
+        	progressListener.resetCurrent();
         }
     	do{        	
     		inBlockBuffer = getChunkFromStream(inputStream,encryptedBlockBuffer,overflow,BLOCKSIZE);

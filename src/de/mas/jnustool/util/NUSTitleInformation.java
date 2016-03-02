@@ -1,6 +1,8 @@
 package de.mas.jnustool.util;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Serializable{
 	private static final long serialVersionUID = 1L;
@@ -13,7 +15,9 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 	private String company_code;
 	private int region;
 	private byte[] key;
+	private ArrayList<Integer> versions = new ArrayList<>();
 	
+	private String selectedVersion = "latest";
 	
 	public enum Region{
 		EUR,
@@ -22,7 +26,7 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 		UKWN
 	}
 
-	public NUSTitleInformation(long titleID, String longnameEN, String ID6, String product_code,String content_platform,String company_code,int region) {
+	public NUSTitleInformation(long titleID, String longnameEN, String ID6, String product_code,String content_platform,String company_code,int region, String[] versions) {
 		setTitleID(titleID);
 		setLongnameEN(longnameEN);
 		setID6(ID6);	
@@ -30,10 +34,19 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 		setCompany_code(company_code);
 		setContent_platform(content_platform);
 		setRegion(region);
+		for(String s : versions){
+			if(s != null){
+				this.versions.add(Integer.parseInt(s));
+			}
+		}
 	}
 
 	public NUSTitleInformation() {
 		// TODO Auto-generated constructor stub
+	}
+
+	public NUSTitleInformation(long titleID, String longnameEN, String ID6, String product_code,String content_platform,String company_code,int region) {
+		this(titleID, longnameEN, ID6, product_code,content_platform,company_code,region,new String[1]);
 	}
 
 	public Region getRegionAsRegion() {		
@@ -108,7 +121,12 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 	
 	@Override
 	public String toString(){
-		return getTitleIDAsString() + ";" + region +";" + getContent_platform() + ";" + getCompany_code() + ";"+ getProduct_code()+ ";" + getID6() + ";" + getLongnameEN();
+		String result =  getTitleIDAsString() + ";" + region +";" + getContent_platform() + ";" + getCompany_code() + ";"+ getProduct_code()+ ";" + getID6() + ";" + getLongnameEN();
+		for(Integer i :versions){
+			result += ";" + i;
+		}
+		result += ";" + getSelectedVersion();
+		return result;
 	}
 
 	@Override
@@ -139,6 +157,41 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 	public boolean equals(Object o){		
 		return titleID == ((NUSTitleInformation)o).titleID;
 	}
-	
 
+	public String getLatestVersion() {
+		String result = "latest";
+		if(versions != null && !versions.isEmpty()){
+			result = versions.get(versions.size()-1) + "";
+		}
+		return result;
+	}
+
+	public List<String> getAllVersions() {
+		List<String> list = new ArrayList<>();
+		if(versions != null && !versions.isEmpty()){
+			for(Integer v: versions){
+				list.add(v + "");
+			}			
+		}
+		list.add("latest");
+		return list;
+	}
+
+	public void setSelectedVersion(String string) {
+		this.selectedVersion = string;		
+	}
+	
+	public int getSelectedVersion() {
+		int version = -1;
+		if(this.selectedVersion == "latest"){
+			version = -1;
+		}else{
+			try{
+				version = Integer.parseInt(this.selectedVersion);
+			}catch(Exception e){
+				
+			}
+		}		
+		return version;		
+	}
 }
