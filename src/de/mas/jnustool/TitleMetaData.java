@@ -164,7 +164,7 @@ public class TitleMetaData {
 	}
 	
 	public boolean isUpdate() {
-		return (titleID & 0x5000000000000L)  == 0x5000000000000L;
+		return (titleID & 0x5000E00000000L)  == 0x5000E00000000L;
 	}
 	
 	public void downloadContents(Progress progress) throws IOException{
