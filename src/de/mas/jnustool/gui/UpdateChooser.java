@@ -168,7 +168,7 @@ public class UpdateChooser extends JPanel {
         progressBar.setStringPainted(true);
         
         JButton btnDownloadMeta = new JButton("Download META");
-        JButton btnDownloadEncrypted = new JButton("Download Enctrypted");
+        JButton btnDownloadEncrypted = new JButton("Download Encrypted Files");
         JProgressBar progressBar_1 = new JProgressBar();
         panel.add(progressBar_1);
         progressBar_1.setValue(0);

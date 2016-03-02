@@ -285,6 +285,16 @@ public class FST {
 		}	
 		return i;
 	}
+	
+	public String notInNUS() {
+		StringBuilder sb = new StringBuilder();
+		for(FEntry f: getFileEntries()){				
+			if(!f.isDir() &&  !f.isInNUSTitle()){
+				sb.append(f.getFullPath() + " " + String.format("%8.2f MB ", f.getFileLength()/1024.0/1024.0) + "\n");
+			}				
+		}	
+		return sb.toString();
+	}
 
 	public Directory getFSTDirectory() {
 		return FSTDirectory;

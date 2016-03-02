@@ -137,7 +137,6 @@ public class NUSTitle {
 			Decryption decryption = new Decryption(ticket.getDecryptedKey(),0);
 			byte[] encryptedFST = null;
 			if(Settings.useCachedFiles){
-				Logger.log(getContentPath());
 				String path = getContentPath() + "/" + String.format("%08x", tmd.contents[0].ID) + ".app";
 				File f = new File(path);				
 				if(f.exists()){

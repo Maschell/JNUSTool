@@ -79,7 +79,6 @@ public class Downloader {
 		String version_suf = "";
 		if(version > 0) version_suf = "." + version;
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd" + version_suf;	
-		System.out.println(URL);
 		downloadFile(URL, "title.tmd",path,null);
 	}
 	
@@ -130,7 +129,6 @@ public class Downloader {
 		String version_suf = "";
 		if(version > 0) version_suf = "." + version;
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd" +version_suf;
-		System.out.println(URL);
 		return downloadFileToByteArray(URL);
 	}
 	private byte[] downloadFileToByteArray(String fileURL) throws IOException {
