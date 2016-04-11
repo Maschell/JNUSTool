@@ -43,6 +43,7 @@ import de.mas.jnustool.Progress;
 import de.mas.jnustool.ProgressUpdateListener;
 import de.mas.jnustool.Starter;
 import de.mas.jnustool.util.NUSTitleInformation;
+import de.mas.jnustool.util.Settings;
 
 public class UpdateChooser extends JPanel {
     /**
@@ -73,7 +74,7 @@ public class UpdateChooser extends JPanel {
         	tableData[i][3] = n.getLatestVersion();        	
         	
         	JComboBox<String> comboBox = new JComboBox<>();
-            for(String v : n.getAllVersions()){
+            for(String v : n.getAllVersionsAsString()){
             	comboBox.addItem(v);
             }
             final int position = i;
@@ -216,7 +217,11 @@ public class UpdateChooser extends JPanel {
 						public void run() {
 							progressBar_1.setValue(0);
 							progress.clear();
-							Starter.downloadEncrypted(output_,progress);
+							if(Settings.DL_ALL_VERSIONS){
+								Starter.downloadEncryptedAllVersions(output_,progress);
+							}else{
+								Starter.downloadEncrypted(output_,progress);
+							}
 							progress.operationFinish();
 							Logger.messageBox("Finished");							
 						}
@@ -229,7 +234,6 @@ public class UpdateChooser extends JPanel {
         	}
         });
         panel.add(btnDownloadEncrypted);
-        
        
         btnNewButton.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {  
@@ -305,6 +309,7 @@ public class UpdateChooser extends JPanel {
             
         }
     }
+    
     /**
      * each row TableCellEditor
      * 
@@ -312,24 +317,27 @@ public class UpdateChooser extends JPanel {
      * @author Nobuo Tamemasa
      */
 
-    class EachRowEditor implements TableCellEditor {
-      protected Hashtable editors;
+	class EachRowEditor implements TableCellEditor {
+	@SuppressWarnings("rawtypes")
+	protected Hashtable editors;
 
-      protected TableCellEditor editor, defaultEditor;
-
-      JTable table;
-
-      /**
-       * Constructs a EachRowEditor. create default editor
-       * 
-       * @see TableCellEditor
-       * @see DefaultCellEditor
-       */
-      public EachRowEditor(JTable table) {
-        this.table = table;
-        editors = new Hashtable();
-        defaultEditor = new DefaultCellEditor(new JTextField());
-      }
+	protected TableCellEditor editor, defaultEditor;
+		
+	JTable table;
+	
+	/**
+	* Constructs a EachRowEditor. create default editor
+	* 
+	* @see TableCellEditor
+	* @see DefaultCellEditor
+	*/
+	
+    @SuppressWarnings("rawtypes")
+	public EachRowEditor(JTable table) {
+    	this.table = table;
+    	editors = new Hashtable();
+    	defaultEditor = new DefaultCellEditor(new JTextField());
+    }
 
       /**
        * @param row
@@ -337,7 +345,8 @@ public class UpdateChooser extends JPanel {
        * @param editor
        *            table cell editor
        */
-      public void setEditorAt(int row, TableCellEditor editor) {
+      @SuppressWarnings("unchecked")
+	  public void setEditorAt(int row, TableCellEditor editor) {
         editors.put(new Integer(row), editor);
       }
 

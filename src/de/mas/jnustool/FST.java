@@ -20,30 +20,31 @@ public class FST {
 	int dirEntries = 0;
 	public FEntry metaFENtry;
 	public List<FEntry> metaFolder = new ArrayList<>();
-	private Directory FSTDirectory = new Directory("root");
+	private Directory<FEntry> FSTDirectory = new Directory<FEntry>("root");
 	
-	private Directory contentDirectory = new Directory("root");
+	private Directory<FEntry> contentDirectory = new Directory<FEntry>("root");
 	
 	public FST(byte[] decrypteddata, TitleMetaData tmd) throws IOException {		
 		parse(decrypteddata,tmd);
 		setTmd(tmd);
 		buildDirectories();
+		
 	}	
 
 	private void buildDirectories() {	
 		 String contentfolder = "";
-		 Directory curContent = contentDirectory;
+		 Directory<FEntry> curContent = contentDirectory;
 		 for(FEntry f : getFileEntries()){			 
 			 if(!f.isDir() && f.isInNUSTitle()){
 				 contentfolder = String.format("%08X",tmd.contents[f.getContentID()].ID);
 				 
 				 if(!contentDirectory.containsFolder(contentfolder)){
-						Directory newDir = new Directory(contentfolder);
+						Directory<FEntry> newDir = new Directory<FEntry>(contentfolder);
 						contentDirectory.addFolder(newDir);
 				}
 				 curContent = contentDirectory.getFolder(contentfolder);
 				 
-				 Directory current = FSTDirectory; 
+				 Directory<FEntry> current = FSTDirectory; 
 				 int i = 0;
 				 
 				 for(String s :f.getPathList()){    
@@ -51,9 +52,9 @@ public class FST {
 					 
 					//Content
 					if(curContent.containsFolder(s)){    				
-						curContent = curContent.get(s);
+						curContent = curContent.getFolder(s);
 					}else{    				
-						Directory newDir = new Directory(s);
+						Directory<FEntry> newDir = new Directory<FEntry>(s);
 						curContent.addFolder(newDir);
 						curContent = newDir;
 					}				
@@ -63,9 +64,9 @@ public class FST {
 						
 					//FST
 					if(current.containsFolder(s)){    				
-						current = current.get(s);
+						current = current.getFolder(s);
 					}else{    				
-						Directory newDir = new Directory(s);
+						Directory<FEntry> newDir = new Directory<FEntry>(s);
 						current.addFolder(newDir);
 						current = newDir;
 					}
@@ -81,10 +82,11 @@ public class FST {
 		
 		if(!Arrays.equals(Arrays.copyOfRange(decrypteddata, 0, 3), new byte[]{0x46,0x53,0x54})){
 			Logger.log(Util.ByteArrayToString(Arrays.copyOfRange(decrypteddata, 0, 3)));
+			
 			System.err.println("Not a FST. Maybe a wrong key?");
 			throw new IllegalArgumentException("File not a FST");
-		}
 		
+		}
 		this.totalContentCount = Util.getIntFromBytes(decrypteddata, 8);
 		int base_offset = 0x20+totalContentCount*0x20;
 		this.totalEntries = Util.getIntFromBytes(decrypteddata, base_offset+8);
@@ -296,11 +298,11 @@ public class FST {
 		return sb.toString();
 	}
 
-	public Directory getFSTDirectory() {
+	public Directory<FEntry> getFSTDirectory() {
 		return FSTDirectory;
 	}
 	
-	public Directory getContentDirectory() {
+	public Directory<FEntry> getContentDirectory() {
 		return contentDirectory;
 	}
 

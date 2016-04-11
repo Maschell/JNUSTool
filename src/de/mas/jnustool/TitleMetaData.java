@@ -9,8 +9,16 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import de.mas.jnustool.util.Util;
-
+/**
+ * The TitleMetaData (TMD) stores information of the NUSTitle. [...]
+ * 
+ * 
+ * Thanks to crediar for the offsets in CDecrypt
+ * @author Maschell
+ *
+ */
 public class TitleMetaData {
+	//TODO: cleanup
 	int				signatureType;									// 0x000
 	byte[]			signature 			= 	new byte[0x100];		// 0x004
 	byte[]			issuer 				=	new byte[0x40];			// 0x140
@@ -43,18 +51,24 @@ public class TitleMetaData {
 	public TitleMetaData(byte[] downloadTMDToByteArray) throws IOException  {
 		if(downloadTMDToByteArray != null){			
 			File tempFile;
-			tempFile = File.createTempFile("bla","blubb");				
+			tempFile = File.createTempFile("jnustool",".tmp");				
 			FileOutputStream fos = new FileOutputStream(tempFile);
 			fos.write(downloadTMDToByteArray);
 			fos.close();
 			parse(tempFile);
 			setTotalContentSize();
+			
 		}else{
 			System.err.println("Invalid TMD");
 			throw new IllegalArgumentException("Invalid TMD");
 		}
 	}
 
+	/**
+	 * Parses a TMD file
+	 * @param tmd 
+	 * @throws IOException
+	 */
 	private void parse(File tmd) throws IOException {
 		
 		RandomAccessFile f = new RandomAccessFile(tmd, "r");		
@@ -143,6 +157,7 @@ public class TitleMetaData {
 		sb.append("SHA2:			"  	+ Util.ByteArrayToString(SHA2) +"\n");
 		sb.append("cert:			"  	+ Util.ByteArrayToString(cert) +"\n");
 		sb.append("contentInfos:		\n");
+		
 		for(int i = 0; i<contents.length-1;i++){
 			sb.append("		" + contentInfos[i] +"\n");
 		}
@@ -152,6 +167,10 @@ public class TitleMetaData {
 		}
 		return sb.toString();		
 	}
+	
+	/**
+	 * Calculates the total size of the encrypted content file
+	 */
 	public void setTotalContentSize(){
 		this.totalContentSize = 0;
 		for(int i = 0; i <contents.length-1;i++){
@@ -159,15 +178,29 @@ public class TitleMetaData {
 		}
 	}	
 	
+	/**
+	 *  Size of all encrypted contents (Without tmd,cetk and h3 files)
+	 * @return Size of contents
+	 */
 	public long getTotalContentSize() {
 		return totalContentSize;
 	}
 	
+	/**
+	 * Checks of the title is an update
+	 * @return true if its an update
+	 */
 	public boolean isUpdate() {
 		return (titleID & 0x5000E00000000L)  == 0x5000E00000000L;
 	}
 	
+	/**
+	 * Downloads all content files (encrypted) 
+	 * @param progress: A progress object can be used to get informations of the progress. Will be ignored when null is used. 
+	 * @throws IOException
+	 */	
 	public void downloadContents(Progress progress) throws IOException{
+		
 		String tmpPath = getContentPath();
 		File f = new File(tmpPath);
 		if(!f.exists())f.mkdir();
@@ -182,14 +215,26 @@ public class TitleMetaData {
 			
 	}
 
+	/**
+	 * Returns the path of the folder where the encrypted content files are stored
+	 * @return path of contents
+	 */
 	public String getContentPath() {		
 		return nus.getContentPath();
 	}
 
+	/**
+	 * Returns the instance of the NUSTitle of this TMD
+	 * @return NUSTitle
+	 */
 	public NUSTitle getNUSTitle() {
 		return nus;
 	}
 
+	/**
+	 * Sets the NUSTitle of this TMD
+	 * @param nus The NUStitle that will be set
+	 */
 	public void setNUSTitle(NUSTitle nus) {
 		this.nus = nus;
 	}

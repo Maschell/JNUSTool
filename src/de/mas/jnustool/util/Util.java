@@ -1,6 +1,9 @@
 package de.mas.jnustool.util;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -81,6 +84,53 @@ public class Util {
 			    	folder_.mkdir();	    	    	
 			    }
 			}	    	
+		}
+	}
+	
+	public static String replaceCharsInString(String path){
+		if(path != null){
+			path = path.replaceAll("[:\\\\*?|<>]", "");
+		}
+		return path;
+	}
+	
+	public static void buildFileList(String basePath, String targetPath, String filename) {
+		File contentFolder =  new File(basePath + "\\" + targetPath);
+		if(contentFolder.exists()){
+			FileWriter fw;
+			BufferedWriter bw = null;
+			try {
+				fw = new FileWriter(basePath + "\\ "+ filename);
+				bw = new BufferedWriter(fw);
+			    bw.write(readFileListRecursive(contentFolder));			   
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				 try {
+					bw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	//TODO make it more generic
+	private static String readFileListRecursive(File contentFolder) {
+		if(contentFolder.exists()){
+			StringBuilder sb = new StringBuilder();
+			for(File f : contentFolder.listFiles()){
+				if(f.isDirectory()){
+					sb.append("?" + f.getName() + "\n");
+					sb.append(readFileListRecursive(f));
+					sb.append("?..\n");
+				}else{
+					sb.append(f.getName() + "\n");
+				}
+			}
+			return sb.toString();
+		}else{
+			return "";
 		}
 	}
 }

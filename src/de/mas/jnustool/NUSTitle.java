@@ -25,7 +25,7 @@ import de.mas.jnustool.util.NUSTitleInformation;
 import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
 
-public class NUSTitle {
+public class NUSTitle {	
 	private TitleMetaData tmd;
 	private TIK ticket;
 	private FST fst;
@@ -34,9 +34,12 @@ public class NUSTitle {
 	private String longNameFolder = new String();
 	private int version = -1;
 	
+	
 	private String getTMDName(){
 		String result = "title.tmd";
-		
+		if(version > 0 && Settings.DL_ALL_VERSIONS){
+			result += "." + version;
+		}
 		return result;
 	}
 	
@@ -155,35 +158,34 @@ public class NUSTitle {
 					Logger.log("Downloading of missing files is not enabled. Exiting");
 					System.exit(2);
 				}
-			}
+            }
 			
-			
-			decryption.init(ticket.getDecryptedKey(), 0);
+			decryption.init(ticket.getDecryptedKey(),0);
 			byte[] decryptedFST = decryption.decrypt(encryptedFST);
 			
 			fst = new FST(decryptedFST,tmd);
 			
 			tmd.setNUSTitle(this);
 			
-			setTargetPath(String.format("%016X", getTitleID()));
+			setTargetPath(String.format("%016X", getTitleID()));			
+			setLongNameFolder(String.format("%016X", getTitleID()));			
 			
-			setLongNameFolder(String.format("%016X", getTitleID()));
-			
-			
-			byte[] metaxml = fst.metaFENtry.downloadAsByteArray();
-			if(metaxml != null){
-				InputStream bis = new ByteArrayInputStream(metaxml);
-				NUSTitleInformation nusinfo = readMeta(bis);
-				String folder = nusinfo.getLongnameEN() + " [" + nusinfo.getID6() + "]";
-				String subfolder = "";
-				if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;				
-				setTargetPath(folder + subfolder);					
-				setLongNameFolder(folder);					
+			if(fst.metaFENtry != null){
+				byte[] metaxml = fst.metaFENtry.downloadAsByteArray();
+				if(metaxml != null){
+					InputStream bis = new ByteArrayInputStream(metaxml);
+					NUSTitleInformation nusinfo = readMeta(bis);
+					String folder = nusinfo.getLongnameEN() + " [" + nusinfo.getID6() + "]";
+					String subfolder = "";
+					if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;				
+					setTargetPath(folder + subfolder);					
+					setLongNameFolder(folder);					
+				}
 			}
 						
 	        if(Settings.downloadContent){
 				downloadEncryptedFiles(null);
-			}
+	        }
 			
 			Logger.log("Total Size of Content Files: " + ((int)((getTotalContentSize()/1024.0/1024.0)*100))/100.0 +" MB");
 			Logger.log("Total Size of Decrypted Files: " + ((int)((fst.getTotalContentSizeInNUS()/1024.0/1024.0)*100))/100.0 +" MB");
@@ -198,6 +200,7 @@ public class NUSTitle {
 	}
 
 	public void downloadEncryptedFiles(Progress progress) throws IOException {
+		
 		Util.createSubfolder(getContentPath());
 		
 		Downloader.getInstance().downloadTMD(titleID,version,getContentPath());		
@@ -209,12 +212,16 @@ public class NUSTitle {
 			fos.write(tmd.cert);
 			fos.write(ticket.cert1);
 			fos.close();
+			if(version > 0 && Settings.DL_ALL_VERSIONS){			
+				fos = new FileOutputStream(getContentPath() + "/title.cert." + version);		
+				fos.write(ticket.cert0);
+				fos.write(tmd.cert);
+				fos.write(ticket.cert1);
+				fos.close();
+			}
 		}catch(Exception e){
 			Logger.log("Random error.");
 		}
-		
-		
-		
 	}
 
 	NUSTitleInformation readMeta(InputStream bis) {
@@ -278,7 +285,7 @@ public class NUSTitle {
 
 	public String getContentPath() {		
 		String result = getContentPathPrefix() + String.format("%016X", getTitleID());
-		if(version > 0){
+		if(version > 0 && !Settings.DL_ALL_VERSIONS){ //Only add the prefix when we don't download all version of that title			
 			result += "_v" + version;
 		}
 		return result;
@@ -307,11 +314,12 @@ public class NUSTitle {
 			}
 		}
 		pool.invokeAll(dlList);
+		if(tmd.isUpdate()) Util.buildFileList(getTargetPath(),"content",Settings.FILELIST_NAME);
 		Logger.log("Done!");
 	}
-	
+
 	public void setTargetPath(String path){
-		path = path.replaceAll("[:\\\\*?|<>]", "");
+		path = Util.replaceCharsInString(path);
 		this.targetPath =  path;
 	}
 	
@@ -324,7 +332,7 @@ public class NUSTitle {
 	}
 	
 	public void setLongNameFolder(String path) {
-		path = path.replaceAll("[:\\\\*?|<>]", "");
+		path = Util.replaceCharsInString(path);
 		longNameFolder  = path;
 	}
 
@@ -335,7 +343,4 @@ public class NUSTitle {
 	public void setVersion(int version) {
 		this.version = version;
 	}
-
-	
-
 }

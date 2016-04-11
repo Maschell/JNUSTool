@@ -9,7 +9,7 @@ import de.mas.jnustool.util.Downloader;
 import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
 
-public class FEntry {
+public class FEntry implements IHasName{
 	private FST fst;
 	
 	public static int DIR_FLAG = 1;
@@ -231,6 +231,11 @@ public class FEntry {
 
 	public byte[] downloadAsByteArray() throws IOException {
 		return Downloader.getInstance().downloadAndDecrypt(this,null,true);
+	}
+
+	@Override
+	public String getName() {
+		return getFileName();
 	}
 
 	

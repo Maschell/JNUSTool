@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.mas.jnustool.gui.NUSGUI;
 import de.mas.jnustool.gui.UpdateChooser;
@@ -23,7 +24,7 @@ public class Starter {
 	
 	public static void main(String[] args) {
 		
-		Logger.log("JNUSTool 0.0.5 - alpha - by Maschell");
+		Logger.log("JNUSTool 0.0.6 - alpha - by Maschell");
 		Logger.log("");
 		try {
 			readConfig();
@@ -31,6 +32,7 @@ public class Starter {
 			System.err.println("Error while reading config! Needs to be:");
 			System.err.println("DOWNLOAD URL BASE");
 			System.err.println("COMMONKEY");
+			System.err.println("updateinfos.csv");
 			return;
 		}
 
@@ -108,7 +110,7 @@ public class Starter {
 		    	String  product_code = infos[4];
 		    	String  ID6 = infos[5];
 		    	String  longnameEN = infos[6];
-		    	String[]  versions = infos[7].split(",");
+		    	String[]  versions = infos[7].split(",");		    	
 		    	NUSTitleInformation info = new NUSTitleInformation(titleID, longnameEN, ID6, product_code, content_platform, company_code, region,versions);
 		    	
 		    	list.add(info);
@@ -131,7 +133,7 @@ public class Starter {
 	public static void readConfig() throws IOException {
 		BufferedReader in = new BufferedReader(new FileReader(new File("config")));		
 		Downloader.URL_BASE =  in.readLine();	
-		String commonkey = in.readLine();		
+		String commonkey = in.readLine();
 		if(commonkey.length() != 32){
 			Logger.messageBox("CommonKey length is wrong");
 			Logger.log("Commonkey length is wrong");
@@ -209,6 +211,47 @@ public class Starter {
 				}				
 			}));
 		}
+		for(ForkJoinTask<Boolean> task : list){
+			try {
+				task.get();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+	public static AtomicInteger finished = new AtomicInteger(); 
+
+	public static void downloadEncryptedAllVersions(List<NUSTitleInformation> output_, Progress progress) {
+		ForkJoinPool pool = new ForkJoinPool(25);
+
+		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
+		
+		for(NUSTitleInformation nus : output_){
+			final long tID = nus.getTitleID();
+			list.add(pool.submit(new Callable<Boolean>(){
+				@Override
+				public Boolean call() throws Exception {
+					int count = 1;
+					for(Integer i : nus.getAllVersions()){
+						NUSTitle nusa  = new NUSTitle(tID,i, Util.ByteArrayToString(nus.getKey()));
+						Progress childProgress = new Progress();
+						progress.add(childProgress);			
+						nusa.downloadEncryptedFiles(progress);
+						System.out.println("Update download progress " + "(" + nus.getLongnameEN() + ") version "+ i + " complete! This was " + count  + " of " + nus.getAllVersions().size() + "!");
+						count++;
+					}	
+					System.out.println("Update download complete " + "(" + nus.getLongnameEN() +")" +"! Loaded updates for " +  nus.getAllVersions().size() + " version. Now are " + finished.incrementAndGet() + " of " + output_.size() + " done! ");
+					return true;
+				}				
+			}));
+		}
+		
 		for(ForkJoinTask<Boolean> task : list){
 			try {
 				task.get();

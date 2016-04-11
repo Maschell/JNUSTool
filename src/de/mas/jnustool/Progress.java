@@ -27,8 +27,8 @@ public class Progress {
 	}
 
 	private void setCurrent(long current) {
-		this.current.set(current);		
-		update();	
+		this.current.set(current);	
+		update();
 	}
 	
 	public void addTotal(long i) {		
@@ -62,7 +62,7 @@ public class Progress {
 	private void update() {		
 		if(father != null) father.update();
 		
-		if(progressUpdateListener !=  null){			
+		if(progressUpdateListener !=  null){
 				progressUpdateListener.updatePerformed(this);			
 		}
 	}
@@ -114,7 +114,7 @@ public class Progress {
 	}
 
 	public void finish() {
-		setCurrent(getTotalOfSingle());
+		addCurrent((int) getTotalOfSingle());
 	}
 	
 	private boolean inprogress = false;

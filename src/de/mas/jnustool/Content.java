@@ -7,17 +7,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 import de.mas.jnustool.util.Downloader;
 import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
-
+/**
+ * Content file of the NUSTitle. Holds the encrpyted files
+ * 
+ * Thanks to crediar for the offsets in CDecrypt
+ * @author Maschell
+ *
+ */
 public class Content {
-	
+	/**
+	 * TODO: make it simpler
+	 */
 	int 	ID;						//	0	 0xB04
 	short	index;					//	4    0xB08
 	short 	type;					//	6	 0xB0A
 	long	size;					//	8	 0xB0C
 	byte[]	SHA2 = new byte[32];	//  16    0xB14
 	TitleMetaData tmd;
-	AtomicInteger error_output_done = new AtomicInteger(0);//  16    0xB14
-	
+	AtomicInteger error_output_done = new AtomicInteger(0);	
 	
 	public Content(int ID, short index, short type, long size, byte[] SHA2,TitleMetaData tmd) {
 		this.ID = ID;
@@ -27,23 +34,23 @@ public class Content {
 		this.SHA2 = SHA2;
 		this.tmd = tmd;
 	}
-	@Override
-	public String toString(){		
-		return "ID: " + ID +" index: " + index + " type: " + type + " size: " + size + " SHA2: " + Util.ByteArrayToString(SHA2); 
-	}
 	
-	public void download(Progress progress) throws IOException{
+	/**
+	 * Downloads the content files (encrypted) 
+	 * @param progress: A progress object can be used to get informations of the progress. Will be ignored when null is used. 
+	 * @throws IOException
+	 */	
+	public void download(Progress progress) throws IOException{		
 		String tmpPath = tmd.getContentPath();
-		if ((type & 0x02) == 0x02){
-			Downloader.getInstance().downloadContentH3(tmd.titleID,ID,tmpPath,null);
-		}
+		
 		File f = new File(tmpPath + "/" + String.format("%08X", ID ) + ".app");
 		if(f.exists()){
 			if(f.length() == size){
 				Logger.log("Skipping Content: " + String.format("%08X", ID));
 				progress.addCurrent((int) size);
+				return;
 			}else{
-				if(Settings.downloadWhenCachedFilesMissingOrBroken){
+				if(Settings.downloadWhenCachedFilesMissingOrBroken){				
 					Logger.log("Content " +String.format("%08X", ID) + " is broken. Downloading it again.");
 					Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);	
 				}else{
@@ -59,6 +66,13 @@ public class Content {
 			Logger.log("Download Content: " + String.format("%08X", ID));
 			Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);
 		}
-		
+		if ((type & 0x02) == 0x02){
+			Downloader.getInstance().downloadContentH3(tmd.titleID,ID,tmpPath,null);
+		}
+	}
+	
+	@Override
+	public String toString(){		
+		return "ID: " + ID +" index: " + index + " type: " + type + " size: " + size + " SHA2: " + Util.ByteArrayToString(SHA2); 
 	}
 }

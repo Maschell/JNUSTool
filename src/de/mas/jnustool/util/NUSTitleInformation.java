@@ -125,7 +125,7 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 		for(Integer i :versions){
 			result += ";" + i;
 		}
-		result += ";" + getSelectedVersion();
+		//result += ";" + getSelectedVersion();
 		return result;
 	}
 
@@ -166,7 +166,11 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 		return result;
 	}
 
-	public List<String> getAllVersions() {
+	public List<Integer> getAllVersions() {
+		return versions;
+	}
+	
+	public List<String> getAllVersionsAsString() {
 		List<String> list = new ArrayList<>();
 		if(versions != null && !versions.isEmpty()){
 			for(Integer v: versions){

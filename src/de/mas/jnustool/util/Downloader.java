@@ -78,8 +78,9 @@ public class Downloader {
 	public void downloadTMD(long titleID,int version,String path) throws IOException {
 		String version_suf = "";
 		if(version > 0) version_suf = "." + version;
-		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd" + version_suf;	
+		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd" + version_suf;
 		downloadFile(URL, "title.tmd",path,null);
+		if(Settings.DL_ALL_VERSIONS) downloadFile(URL, "title.tmd"+version_suf,path,null);
 	}
 	
 	public void downloadFile(String fileURL,String filename,String tmpPath, Progress progress) throws IOException{
@@ -114,23 +115,28 @@ public class Downloader {
 	public void downloadFile(String fileURL,String filename) throws IOException{
 		downloadFile(fileURL, filename,null,null);
 	}
+	
 	public void downloadTicket(long titleID,String path) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/cetk";
 		downloadFile(URL, "title.tik",path,null);
 	}
+	
 	public void downloadContent(long titleID,int contentID,Progress progress) throws IOException {
 		downloadContent(titleID,contentID, null,progress);
 	}
+	
 	public byte[] downloadContentToByteArray(long titleID,int contentID) throws IOException {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID);
 		return downloadFileToByteArray(URL);		
 	}
+	
 	public byte[] downloadTMDToByteArray(long titleID, int version) throws IOException {
 		String version_suf = "";
 		if(version > 0) version_suf = "." + version;
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/tmd" +version_suf;
 		return downloadFileToByteArray(URL);
 	}
+	
 	private byte[] downloadFileToByteArray(String fileURL) throws IOException {
 		
 		int BUFFER_SIZE = 0x800;		

@@ -1,17 +1,21 @@
 package de.mas.jnustool;
 
 import de.mas.jnustool.util.Util;
-
+/**
+ * Stores informations of the content [...] 
+ * 
+ * 
+ * Thanks to crediar for the offsets in CDecrypt
+ * @author Maschell
+ *
+ */
 public class ContentInfo {
-	public short 	indexOffset;			//	0	 0x204
+	public short 	indexOffset;			//	0	 0x204  
 	public short	commandCount;			//	2	 0x206
 	public byte[]  	SHA2 = new byte[32];	//  12 	 0x208
 	
-	//TODO: Test, size checking
-	/*
-	 * untested
-	 */
-	
+	//TODO: Test, size checking. Untested right now
+		
 	public ContentInfo(byte[] info){		
 		this.indexOffset=(short)( ((info[0]&0xFF)<<8) | (info[1]&0xFF) );
 		this.commandCount=(short)( ((info[2]&0xFF)<<8) | (info[3]&0xFF) );
@@ -25,6 +29,7 @@ public class ContentInfo {
 		this.commandCount = commandCount;
 		this.SHA2 = SHA2;
 	}
+	
 	@Override
 	public String toString(){		
 		return "indexOffset: " + indexOffset +" commandCount: " + commandCount + " SHA2: " + Util.ByteArrayToString(SHA2); 
