@@ -63,7 +63,7 @@ public class Starter {
 					}	
 					System.exit(0);
 				}
-				NUSGUI m = new NUSGUI(new NUSTitle(titleID,-1, key));
+				NUSGUI m = new NUSGUI(new NUSTitle(titleID,version, key));
 		        m.setVisible(true);			
 			}
 		}else{
