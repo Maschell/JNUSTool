@@ -46,6 +46,10 @@ public class NUSTitle {
 	public NUSTitle(long titleId,int version, String key) {		
 		setVersion(version);
 		setTitleID(titleId);
+		if(version != -1){
+			Logger.log("Version " + version);
+		}
+			
 		try {
 			/*
 			if(Settings.downloadContent){
@@ -163,14 +167,17 @@ public class NUSTitle {
 			decryption.init(ticket.getDecryptedKey(),0);
 			byte[] decryptedFST = decryption.decrypt(encryptedFST);
 			
-			fst = new FST(decryptedFST,tmd);
-			
+			try{
+				fst = new FST(decryptedFST,tmd);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
 			tmd.setNUSTitle(this);
 			
 			setTargetPath(String.format("%016X", getTitleID()));			
 			setLongNameFolder(String.format("%016X", getTitleID()));			
 			
-			if(fst.metaFENtry != null){
+			if(fst != null && fst.metaFENtry != null){
 				byte[] metaxml = fst.metaFENtry.downloadAsByteArray();
 				if(metaxml != null){
 					InputStream bis = new ByteArrayInputStream(metaxml);
@@ -188,10 +195,10 @@ public class NUSTitle {
 	        }
 			
 			Logger.log("Total Size of Content Files: " + ((int)((getTotalContentSize()/1024.0/1024.0)*100))/100.0 +" MB");
-			Logger.log("Total Size of Decrypted Files: " + ((int)((fst.getTotalContentSizeInNUS()/1024.0/1024.0)*100))/100.0 +" MB");
-			Logger.log("Entries: " + fst.getTotalEntries());
-			Logger.log("Files: " + fst.getFileCount());
-			Logger.log("Files in NUSTitle: " + fst.getFileCountInNUS());
+			if(fst != null)Logger.log("Total Size of Decrypted Files: " + ((int)((fst.getTotalContentSizeInNUS()/1024.0/1024.0)*100))/100.0 +" MB");
+			if(fst != null)Logger.log("Entries: " + fst.getTotalEntries());
+			if(fst != null)Logger.log("Files: " + fst.getFileCount());
+			if(fst != null)Logger.log("Files in NUSTitle: " + fst.getFileCountInNUS());
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -220,7 +227,7 @@ public class NUSTitle {
 				fos.close();
 			}
 		}catch(Exception e){
-			Logger.log("Random error.");
+			Logger.log("Error while creating ticket files.");
 		}
 	}
 
@@ -306,7 +313,7 @@ public class NUSTitle {
 	public void decryptFEntries(List<FEntry> list,Progress progress) {
 		Util.createSubfolder(getTargetPath());
 		//progress = null;
-		ForkJoinPool pool = ForkJoinPool.commonPool();
+		ForkJoinPool pool = new ForkJoinPool(25);
 		List<FEntryDownloader> dlList = new ArrayList<>();
 		for(FEntry f : list){
 			if(!f.isDir() &&  f.isInNUSTitle()){                    			

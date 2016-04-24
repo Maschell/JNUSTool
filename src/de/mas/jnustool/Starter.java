@@ -24,7 +24,7 @@ public class Starter {
 	
 	public static void main(String[] args) {
 		
-		Logger.log("JNUSTool 0.0.6 - alpha - by Maschell");
+		Logger.log("JNUSTool 0.0.7 - alpha - by Maschell");
 		Logger.log("");
 		try {
 			readConfig();
@@ -39,11 +39,30 @@ public class Starter {
 		long titleID = 0;
 		String key = null;
 		if(args.length != 0 ){				
-			titleID = Util.StringToLong(args[0]);			
+			titleID = Util.StringToLong(args[0]);
+			int version = -1;
 			if( args.length > 1 && args[1].length() == 32){
 				key = args[1].substring(0, 32);
 			}
-			if(titleID != 0){		
+			
+			if(titleID != 0){
+				boolean dl_encrypted = false;
+				for(int i =0; i< args.length;i++){
+					if(args[i].startsWith("v")){
+						version = Integer.parseInt((args[i].substring(1)));
+					}
+					if(args[i].equals("-dlEncrypted")){
+						dl_encrypted = true;						
+					}
+				}
+				if(dl_encrypted){
+					NUSTitle title = new NUSTitle(titleID,version, key);
+					try {
+						title.downloadEncryptedFiles(null);
+					} catch (IOException e) {
+					}	
+					System.exit(0);
+				}
 				NUSGUI m = new NUSGUI(new NUSTitle(titleID,-1, key));
 		        m.setVisible(true);			
 			}
