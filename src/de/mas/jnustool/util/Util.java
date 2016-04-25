@@ -100,7 +100,7 @@ public class Util {
 			FileWriter fw;
 			BufferedWriter bw = null;
 			try {
-				fw = new FileWriter(basePath + "\\ "+ filename);
+				fw = new FileWriter(basePath + "\\"+ filename);
 				bw = new BufferedWriter(fw);
 			    bw.write(readFileListRecursive(contentFolder));			   
 			} catch (IOException e) {
