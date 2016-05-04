@@ -95,12 +95,12 @@ public class Util {
 	}
 	
 	public static void buildFileList(String basePath, String targetPath, String filename) {
-		File contentFolder =  new File(basePath + "\\" + targetPath);
+		File contentFolder =  new File(basePath + File.separator + targetPath);
 		if(contentFolder.exists()){
 			FileWriter fw;
 			BufferedWriter bw = null;
 			try {
-				fw = new FileWriter(basePath + "\\"+ filename);
+				fw = new FileWriter(basePath + File.separator + filename);
 				bw = new BufferedWriter(fw);
 			    bw.write(readFileListRecursive(contentFolder));			   
 			} catch (IOException e) {

@@ -185,7 +185,7 @@ public class NUSTitle {
 					String folder = nusinfo.getLongnameEN() + " [" + nusinfo.getID6() + "]";
 					String subfolder = "";
 					if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;				
-					setTargetPath(folder + subfolder);					
+					setTargetPath(folder + subfolder);
 					setLongNameFolder(folder);					
 				}
 			}
