@@ -3,6 +3,8 @@ package de.mas.jnustool;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +115,7 @@ public class Starter {
 		BufferedReader in = null;
 		List<NUSTitleInformation> list = new ArrayList<>();
 		try {
-			in = new BufferedReader(new FileReader(new File(updateCSVPath)));
+			in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(updateCSVPath)), "UTF-8"));
 			String line;
 		    while((line = in.readLine()) != null){
 		    	String[] infos = line.split(";");
