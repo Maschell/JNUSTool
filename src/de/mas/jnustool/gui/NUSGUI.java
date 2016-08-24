@@ -31,7 +31,7 @@ public class NUSGUI extends JFrame {
         super();
         this.setResizable(false);
         setSize(600, 768);
-       setTitle(String.format("%016X", nus.getTitleID()));
+        setTitle(String.format("%016X", nus.getTitleID()));
         getContentPane().setLayout(null);
         
         JSplitPane splitPane = new JSplitPane();

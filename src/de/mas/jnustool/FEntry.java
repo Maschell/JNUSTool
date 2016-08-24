@@ -195,7 +195,13 @@ public class FEntry implements IHasName{
 				}
 			}
 			Logger.log("Downloading: " + String.format("%8.2f MB ", getFileLength()/1024.0/1024.0)  + getFullPath());
-			Downloader.getInstance().downloadAndDecrypt(this,progress,false);
+			try{
+				Downloader.getInstance().downloadAndDecrypt(this,progress,false);
+			}catch(Exception e){
+				e.printStackTrace();
+				System.err.println(this.fst.getTmd().getNUSTitle().getLongNameFolder() + " connection failed.");
+			}
+			
 			
 			
 		} catch (IOException e) {

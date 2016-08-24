@@ -25,7 +25,7 @@ import de.mas.jnustool.util.NUSTitleInformation;
 import de.mas.jnustool.util.Settings;
 import de.mas.jnustool.util.Util;
 
-public class NUSTitle {	
+public class NUSTitle {
 	private TitleMetaData tmd;
 	private TIK ticket;
 	private FST fst;
@@ -43,7 +43,7 @@ public class NUSTitle {
 		return result;
 	}
 	
-	public NUSTitle(long titleId,int version, String key) {		
+	public NUSTitle(long titleId,int version, String key) {
 		setVersion(version);
 		setTitleID(titleId);
 		if(version != -1){
@@ -90,7 +90,14 @@ public class NUSTitle {
 			if(tmd == null){
 				if(Settings.downloadWhenCachedFilesMissingOrBroken){
 					if(Settings.useCachedFiles) Logger.log("Getting missing tmd from Server!");
-					tmd = new TitleMetaData(Downloader.getInstance().downloadTMDToByteArray(titleId,this.version));
+					try{
+						tmd = new TitleMetaData(Downloader.getInstance().downloadTMDToByteArray(titleId,this.version));
+					}catch(IllegalArgumentException e){
+						Logger.log("TMD wrong. Title not found");
+						setTitleID(0);
+						return;
+					}
+					
 				}else{
 					Logger.log("Downloading of missing files is not enabled. Exiting");
 					System.exit(2);
@@ -180,14 +187,20 @@ public class NUSTitle {
 			if(fst != null && fst.metaFENtry != null){
 				byte[] metaxml = fst.metaFENtry.downloadAsByteArray();
 				if(metaxml != null){
-					InputStream bis = new ByteArrayInputStream(metaxml);
-					NUSTitleInformation nusinfo = readMeta(bis);
-					//String folder = nusinfo.getLongnameEN().replaceAll("[^\\x20-\\x7E]", "") + " [" + nusinfo.getID6() + "]";
-					String folder = nusinfo.getLongnameEN() + " [" + nusinfo.getID6() + "]";
-					String subfolder = "";
-					if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;				
-					setTargetPath(folder + subfolder);
-					setLongNameFolder(folder);					
+					try{
+						InputStream bis = new ByteArrayInputStream(metaxml);
+						NUSTitleInformation nusinfo = readMeta(bis);
+						if(nusinfo != null){
+							//String folder = nusinfo.getLongnameEN().replaceAll("[^\\x20-\\x7E]", "") + " [" + nusinfo.getID6() + "]";
+							String folder = nusinfo.getLongnameEN() + " [" + nusinfo.getID6() + "]";
+							String subfolder = "";
+							if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;				
+							setTargetPath(folder + subfolder);
+							setLongNameFolder(folder);
+						}
+					}catch(Exception e){
+						e.printStackTrace();
+					}
 				}
 			}
 						
@@ -252,12 +265,11 @@ public class NUSTitle {
 	         String  company_code = document.getElementsByTagName("company_code").item(0).getTextContent().toString();
 	         String content_platform = document.getElementsByTagName("content_platform").item(0).getTextContent().toString();
 	         String region = document.getElementsByTagName("region").item(0).getTextContent().toString();
-	         NUSTitleInformation nusinfo = new NUSTitleInformation(Util.StringToLong(title_id),longname,ID6,proc,content_platform,company_code,Integer.parseInt(region),new String[1]);
+	         NUSTitleInformation nusinfo = new NUSTitleInformation(Util.StringToLong(title_id),longname,ID6,proc,content_platform,company_code,(int) Util.StringToLong(region),new String[1]);
 	         return nusinfo;
 	        
 		} catch (ParserConfigurationException | SAXException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();	        		
+			Logger.log("Error while parsing the meta files");
 		}
 		return null;	
 		

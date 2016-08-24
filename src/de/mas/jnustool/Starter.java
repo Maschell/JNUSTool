@@ -62,6 +62,7 @@ public class Starter {
 					try {
 						title.downloadEncryptedFiles(null);
 					} catch (IOException e) {
+						e.printStackTrace();
 					}	
 					System.exit(0);
 				}

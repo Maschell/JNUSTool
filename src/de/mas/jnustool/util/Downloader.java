@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import de.mas.jnustool.FEntry;
+import de.mas.jnustool.Logger;
 import de.mas.jnustool.Progress;
 
 public class Downloader {
@@ -165,7 +166,7 @@ public class Downloader {
 	        }
 	        inputStream.close();
         }else{
-        	System.err.println("File not found: " + fileURL);
+        	Logger.log("File not found: " + fileURL);
         }
 	    httpConn.disconnect();
 	    return file;

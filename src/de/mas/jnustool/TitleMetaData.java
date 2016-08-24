@@ -59,7 +59,7 @@ public class TitleMetaData {
 			setTotalContentSize();
 			
 		}else{
-			System.err.println("Invalid TMD");
+			Logger.log("Invalid TMD");
 			throw new IllegalArgumentException("Invalid TMD");
 		}
 	}
