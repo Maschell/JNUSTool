@@ -25,8 +25,7 @@ public class Starter {
 	private static String updateCSVPath;
 	
 	public static void main(String[] args) {
-		
-		Logger.log("JNUSTool 0.0.7 - alpha - by Maschell");
+	    Logger.log("JNUSTool 0.0.8 - alpha - by Maschell");
 		Logger.log("");
 		try {
 			readConfig();
@@ -48,14 +47,25 @@ public class Starter {
 			}
 			
 			if(titleID != 0){
+			    String path = "";
 				boolean dl_encrypted = false;
+				boolean download_file = false;
+				
 				for(int i =0; i< args.length;i++){
 					if(args[i].startsWith("v")){
 						version = Integer.parseInt((args[i].substring(1)));
 					}
 					if(args[i].equals("-dlEncrypted")){
 						dl_encrypted = true;						
-					}
+					}					
+					
+					if(args[i].equals("-file")){
+                        if(args.length > i){
+                            i++;
+                            path = args[i];                           
+                        }
+                        download_file = true;                        
+                    }       
 				}
 				if(dl_encrypted){
 					NUSTitle title = new NUSTitle(titleID,version, key);
@@ -65,7 +75,14 @@ public class Starter {
 						e.printStackTrace();
 					}	
 					System.exit(0);
-				}
+				}else if(download_file){
+                    NUSTitle title = new NUSTitle(titleID,version, key);
+                    
+                    title.decryptFEntries(title.getFst().getFileEntriesByFilePath(path), null);
+                    
+                    System.exit(0);
+                }
+				
 				NUSGUI m = new NUSGUI(new NUSTitle(titleID,version, key));
 		        m.setVisible(true);			
 			}

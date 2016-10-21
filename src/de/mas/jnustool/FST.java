@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.mas.jnustool.util.Util;
 
@@ -313,6 +315,21 @@ public class FST {
 	public void setTmd(TitleMetaData tmd) {
 		this.tmd = tmd;
 	}
+
+    public List<FEntry> getFileEntriesByFilePath(String filepath){
+        List<FEntry> newList = new ArrayList<>();
+        if(!filepath.startsWith("/")){
+            filepath = "/" + filepath;
+        }
+        Pattern p = Pattern.compile(filepath);
+        for(FEntry f : fileEntries){  
+            Matcher m = p.matcher(f.getFullPath());
+            if(m.matches()){
+                newList.add(f);
+            }
+        }       
+        return newList;
+    }
 
 	
 	
