@@ -227,7 +227,11 @@ public class NUSTitle {
 		Downloader.getInstance().downloadTMD(titleID,version,getContentPath());		
 		tmd.downloadContents(progress);
 		try{
-			Downloader.getInstance().downloadTicket(titleID,getContentPath());
+		    File f = new File(getContentPath() + "/" + "title.tik");
+            if(!f.exists()){
+                Downloader.getInstance().downloadTicket(titleID,getContentPath());
+            }
+			
 			FileOutputStream fos = new FileOutputStream(getContentPath() + "/title.cert");		
 			fos.write(ticket.cert0);
 			fos.write(tmd.cert);
@@ -241,11 +245,12 @@ public class NUSTitle {
 				fos.close();
 			}
 		}catch(Exception e){
+		    e.printStackTrace();
 			Logger.log("Error while creating ticket files.");
 		}
 	}
 
-	NUSTitleInformation readMeta(InputStream bis) {
+	public NUSTitleInformation readMeta(InputStream bis) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
         
