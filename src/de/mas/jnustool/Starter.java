@@ -87,7 +87,7 @@ public class Starter {
 		        m.setVisible(true);			
 			}
 		}else{
-			for(NUSTitleInformation nus : getTitleID()){
+			for(final NUSTitleInformation nus : getTitleID()){
 				
 				final long tID = nus.getTitleID();
 				new Thread(new Runnable() {
@@ -199,11 +199,11 @@ public class Starter {
 	    return true;
 	}
 
-	public static void downloadMeta(List<NUSTitleInformation> output_, Progress totalProgress) {
+	public static void downloadMeta(List<NUSTitleInformation> output_, final Progress totalProgress) {
 		ForkJoinPool pool = ForkJoinPool.commonPool();
 		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
 		
-		for(NUSTitleInformation nus : output_){
+		for(final NUSTitleInformation nus : output_){
 			final long tID = nus.getTitleID();
 			list.add(pool.submit(new Callable<Boolean>(){
 				@Override
@@ -232,11 +232,11 @@ public class Starter {
 		}
 	}
 
-	public static void downloadEncrypted(List<NUSTitleInformation> output_, Progress progress) {
+	public static void downloadEncrypted(List<NUSTitleInformation> output_, final Progress progress) {
 		ForkJoinPool pool = ForkJoinPool.commonPool();
 		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
 		
-		for(NUSTitleInformation nus : output_){
+		for(final NUSTitleInformation nus : output_){
 			final long tID = nus.getTitleID();
 			list.add(pool.submit(new Callable<Boolean>(){
 				@Override
@@ -266,12 +266,12 @@ public class Starter {
 
 	public static AtomicInteger finished = new AtomicInteger(); 
 
-	public static void downloadEncryptedAllVersions(List<NUSTitleInformation> output_, Progress progress) {
+	public static void downloadEncryptedAllVersions(List<NUSTitleInformation> output_, final Progress progress) {
 		ForkJoinPool pool = new ForkJoinPool(25);
 
 		List<ForkJoinTask<Boolean>> list = new ArrayList<>();
-		
-		for(NUSTitleInformation nus : output_){
+		final int outputsize = output_.size();
+		for(final NUSTitleInformation nus : output_){
 			final long tID = nus.getTitleID();
 			list.add(pool.submit(new Callable<Boolean>(){
 				@Override
@@ -285,7 +285,7 @@ public class Starter {
 						System.out.println("Update download progress " + "(" + nus.getLongnameEN() + ") version "+ i + " complete! This was " + count  + " of " + nus.getAllVersions().size() + "!");
 						count++;
 					}	
-					System.out.println("Update download complete " + "(" + nus.getLongnameEN() +")" +"! Loaded updates for " +  nus.getAllVersions().size() + " version. Now are " + finished.incrementAndGet() + " of " + output_.size() + " done! ");
+					System.out.println("Update download complete " + "(" + nus.getLongnameEN() +")" +"! Loaded updates for " +  nus.getAllVersions().size() + " version. Now are " + finished.incrementAndGet() + " of " + outputsize + " done! ");
 					return true;
 				}				
 			}));

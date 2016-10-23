@@ -55,7 +55,7 @@ public class UpdateChooser extends JPanel {
     JTable table;
     String newline = "\n";
     ListSelectionModel listSelectionModel;
-    public UpdateChooser(JFrame window) {
+    public UpdateChooser(final JFrame window) {
         super(new BorderLayout());        
         setSize(800, 650);
 
@@ -170,10 +170,10 @@ public class UpdateChooser extends JPanel {
         
         JButton btnDownloadMeta = new JButton("Download META");
         JButton btnDownloadEncrypted = new JButton("Download Encrypted Files");
-        JProgressBar progressBar_1 = new JProgressBar();
+        final JProgressBar progressBar_1 = new JProgressBar();
         panel.add(progressBar_1);
         progressBar_1.setValue(0);
-        Progress progress = new Progress();
+        final Progress progress = new Progress();
         progress.setProgressUpdateListener(new ProgressUpdateListener() {
 			
 			@Override

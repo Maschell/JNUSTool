@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
@@ -245,7 +246,7 @@ public class NUSTitle {
         byte[] defaultcert = null;
         
         Logger.log("Trying to create title.cert");
-        if(!f.exists()){
+        if(!f.exists() || Arrays.equals(ticket.cert1, new byte[0x300])){
             try{
             defaultcert = Util.getDefaultCert();
             }catch(Exception e){
@@ -255,6 +256,7 @@ public class NUSTitle {
             }
             Logger.log("Got missing cert from OSv10 title");            
         }else{
+            
             defaultcert = ticket.cert1;
         }
         
