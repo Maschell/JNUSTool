@@ -25,7 +25,7 @@ public class Starter {
 	private static String updateCSVPath;
 	
 	public static void main(String[] args) {
-	    Logger.log("JNUSTool 0.0.8b - alpha - by Maschell");
+	    Logger.log("JNUSTool 0.0.8c - alpha - by Maschell");
 		Logger.log("");
 		try {
 			readConfig();

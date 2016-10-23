@@ -30,6 +30,10 @@ public class NUSGUI extends JFrame {
     public NUSGUI(NUSTitle nus) {
         super();
         this.setResizable(false);
+        if(nus.getFst() == null){
+            Logger.log("Error: Can't create GUI window without the FST. Please provide a key/title.key. To download the encrpyted files use the -dlEncrypted argument");
+            System.exit(-1);
+        }
         setSize(600, 768);
         setTitle(String.format("%016X", nus.getTitleID()));
         getContentPane().setLayout(null);
@@ -43,6 +47,7 @@ public class NUSGUI extends JFrame {
         
        
         this.getContentPane().add(splitPane);
+        
         final JCheckBoxTree cbt = new JCheckBoxTree(nus);
         qPane.setViewportView(cbt);
         
