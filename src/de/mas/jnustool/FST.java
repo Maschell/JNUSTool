@@ -83,11 +83,7 @@ public class FST {
 	private void parse(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
 		
 		if(!Arrays.equals(Arrays.copyOfRange(decrypteddata, 0, 3), new byte[]{0x46,0x53,0x54})){
-			Logger.log(Util.ByteArrayToString(Arrays.copyOfRange(decrypteddata, 0, 3)));
-			
-			System.err.println("Not a FST. Maybe a wrong key?");
-			throw new IllegalArgumentException("File not a FST");
-		
+			throw new IllegalArgumentException("Not a FST. Maybe a wrong key? Don't worry if you only want to download encrypted files!");		
 		}
 		this.totalContentCount = Util.getIntFromBytes(decrypteddata, 8);
 		int base_offset = 0x20+totalContentCount*0x20;

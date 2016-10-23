@@ -37,7 +37,8 @@ public class TitleMetaData {
 	byte[]			SHA2 				= 	new byte[32];			// 0x1E4
 	ContentInfo[] 	contentInfos		= 	new ContentInfo[64];	// 0x1E4
 	Content[] 		contents;										// 0x1E4 
-	byte[] 			cert				 =  new byte[0x300];
+	byte[]          cert1                 =  new byte[0x400];
+	byte[]          cert2                 =  new byte[0x300];
 
 	private NUSTitle nus;
 	
@@ -130,8 +131,11 @@ public class TitleMetaData {
 			this.contents[i] = new Content(ID,index,type,size,buffer,this);
 		}
 		
-		if(f.read(cert,0, 0x300) != 0x300){
-			Logger.log("Error reading TMD cert");
+		if(f.read(cert2,0, 0x300) != 0x300){
+            Logger.log("Error reading TMD cert2");
+        }
+		if(f.read(cert1,0, 0x400) != 0x400){
+            Logger.log("Error reading TMD cert1");
 		}
 		f.close();
 	}
@@ -155,7 +159,8 @@ public class TitleMetaData {
 		sb.append("contentCount:		"  	+ contentCount +"\n");
 		sb.append("bootIndex:		"  	+ bootIndex +"\n");
 		sb.append("SHA2:			"  	+ Util.ByteArrayToString(SHA2) +"\n");
-		sb.append("cert:			"  	+ Util.ByteArrayToString(cert) +"\n");
+		sb.append("cert1:			"  	+ Util.ByteArrayToString(cert1) +"\n");
+		sb.append("cert2:           "   + Util.ByteArrayToString(cert2) +"\n");
 		sb.append("contentInfos:		\n");
 		
 		for(int i = 0; i<contents.length-1;i++){

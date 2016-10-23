@@ -47,12 +47,16 @@ public class Content {
 		if(f.exists()){
 			if(f.length() == size){
 				Logger.log("Skipping Content: " + String.format("%08X", ID));
-				progress.addCurrent((int) size);
-				return;
+				if(progress != null){
+				    progress.addCurrent((int) size);
+				}				
 			}else{
 				if(Settings.downloadWhenCachedFilesMissingOrBroken){				
-					Logger.log("Content " +String.format("%08X", ID) + " is broken. Downloading it again.");
-					Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);	
+					Logger.log("Content " +String.format("%08X", ID) + " has a different filesize and may be broken. Downloading it again.");
+					new File(tmpPath).delete();
+					Logger.log("Downloading Content: " + String.format("%08X", ID));
+					Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);
+					
 				}else{
 					if(Settings.skipBrokenFiles){
 						Logger.log("Content " +String.format("%08X", ID) + " is broken. Ignoring it.");								
@@ -63,11 +67,17 @@ public class Content {
 				}
 			}
 		}else{
-			Logger.log("Download Content: " + String.format("%08X", ID));
-			Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);
+			Logger.log("Downloading Content: " + String.format("%08X", ID));
+			Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);          
 		}
 		if ((type & 0x02) == 0x02){
-			Downloader.getInstance().downloadContentH3(tmd.titleID,ID,tmpPath,null);
+		    f = new File(tmpPath + "/" + String.format("%08X", ID ) + ".h3");
+	        if(!f.exists()){
+	            Logger.log("Downloading H3: " + String.format("%08X.h3", ID));
+	            Downloader.getInstance().downloadContentH3(tmd.titleID,ID,tmpPath,null);
+	        }else{
+	            Logger.log("Skipping H3: " + String.format("%08X.h3", ID));
+	        }		    
 		}
 	}
 	

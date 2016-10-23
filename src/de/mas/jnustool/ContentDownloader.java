@@ -45,7 +45,12 @@ public class ContentDownloader implements Callable<Integer>
 
 	@Override
 	public Integer call() throws Exception {
-		this.content.download(progress);
+	    try{
+	        this.content.download(progress);
+	    }catch(Exception e){
+	        e.printStackTrace();
+	        throw e;
+	    }
 		return null;
 	}
 

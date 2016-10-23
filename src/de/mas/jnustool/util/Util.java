@@ -22,7 +22,6 @@ public class Util {
 	    return data;
 	}
 	
-	
 	public static String ByteArrayToString(byte[] ba)
 	{
 	  if(ba == null) return null;
@@ -133,4 +132,9 @@ public class Util {
 			return "";
 		}
 	}
+
+    public static byte[] getDefaultCert() throws IOException {
+        byte [] ticket = Downloader.getInstance().downloadTicketToByteArray(0x000500101000400AL); //Downloading cetk from OSv10
+        return Arrays.copyOfRange(ticket, 0x350, 0x350+0x300);
+    }
 }
