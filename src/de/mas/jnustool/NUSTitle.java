@@ -104,16 +104,17 @@ public class NUSTitle {
 					Logger.log("Downloading of missing files is not enabled. Exiting");
 					System.exit(2);
 				}
-			}			
+			}
+            
 			if(key != null){
 				Logger.log("Using ticket from parameter.");
-				ticket = new TIK(key,titleId);				
+				ticket = new TIK(key,tmd.titleID);
 			}else{
 				if(Settings.useCachedFiles){
 					File f = new File(getContentPath() + "/" + "title.tik");
 					if(f.exists()){
 						Logger.log("Using cached cetk.");
-						ticket = new TIK(f,titleId);
+						ticket = new TIK(f,tmd.titleID);
 					}else{
 						Logger.log("No cached ticket found.");
 					}
