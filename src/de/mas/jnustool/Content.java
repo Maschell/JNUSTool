@@ -70,7 +70,7 @@ public class Content {
 			Logger.log("Downloading Content: " + String.format("%08X", ID));
 			Downloader.getInstance().downloadContent(tmd.titleID,ID,tmpPath,progress);          
 		}
-		if ((type & 0x02) == 0x02){
+		if ((type & 0x2003) == 0x2003){
 		    f = new File(tmpPath + "/" + String.format("%08X", ID ) + ".h3");
 	        if(!f.exists()){
 	            Logger.log("Downloading H3: " + String.format("%08X.h3", ID));

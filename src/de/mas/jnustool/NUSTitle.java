@@ -3,6 +3,7 @@ package de.mas.jnustool;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -182,11 +183,15 @@ public class NUSTitle {
 			}
 			tmd.setNUSTitle(this);
 			
+			FileOutputStream  fw = new FileOutputStream ("fst.dec");
+			fw.write(decryptedFST);
+			fw.close();
+			
 			setTargetPath(String.format("%016X", getTitleID()));			
 			setLongNameFolder(String.format("%016X", getTitleID()));			
 			
 			if(fst != null && fst.metaFENtry != null){
-				byte[] metaxml = fst.metaFENtry.downloadAsByteArray();
+				byte[] metaxml = fst.metaFENtry.getAsByteArray();
 				if(metaxml != null){
 					try{
 						InputStream bis = new ByteArrayInputStream(metaxml);
@@ -236,7 +241,7 @@ public class NUSTitle {
                 Downloader.getInstance().downloadTicket(titleID,getContentPath());
                 Logger.log("Downloaded title.tik");
             }catch(Exception e){
-                Logger.log("!!!Missing file: title.tik. You need to add it manually before you can install this title.!!!");
+                
             }
         }else{
             Logger.log("Skipped title.tik");

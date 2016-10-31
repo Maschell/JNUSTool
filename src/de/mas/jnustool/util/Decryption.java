@@ -1,11 +1,14 @@
 package de.mas.jnustool.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -20,6 +23,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import de.mas.jnustool.FEntry;
+import de.mas.jnustool.Logger;
 import de.mas.jnustool.Progress;
 import de.mas.jnustool.TIK;
 
@@ -107,60 +111,93 @@ public class Decryption {
      	this.IV = Arrays.copyOfRange(blockBuffer,BLOCKSIZE-16, BLOCKSIZE);
 		return output;
 	}
-
- 	byte[] hash = new byte[20];
- 	byte[] h0 = new byte[20];
- 	
-	public byte[] decryptFileChunkHash(byte[] blockBuffer, int BLOCKSIZE, int block, int contentID){
-		if(BLOCKSIZE != 0x10000) throw new IllegalArgumentException("Blocksize not supported");
-		IV = new byte[16];
-		IV[1] = (byte)contentID;
+	
+	public byte[] decryptFileChunkHash(byte[] blockBuffer, int block, int contentID,byte[] h3_hashes){
+		IV = ByteBuffer.allocate(16).putShort((short) contentID).array();
 		    
      	byte[] hashes = decryptFileChunk(blockBuffer,0x0400,IV);
      	
-     	System.arraycopy(hashes, (int) (0x14*block), IV, 0, 16);     	
-     	System.arraycopy(hashes, (int) (0x14*block), h0, 0, 20);     	
+     	hashes[1] ^= (byte)contentID;
      	
-     	if( block == 0 )
-     		IV[1] ^= (byte)contentID;     	
+     	//System.out.println("block : " + String.format("%04d", block) +":" +Util.ByteArrayToString(hashes));
+     	
+     	int H0_start = (block % 16) * 20;
+     	int H1_start = (16 + (block / 16) % 16) * 20;
+        int H2_start = (32 + (block / 256) % 16) * 20;
+        int H3_start = ((block / 4096) % 16) * 20;
+     	
+     	IV = Arrays.copyOfRange(hashes,H0_start,H0_start + 16); 
      	
 		byte[] output =  decryptFileChunk(blockBuffer,0x400,0xFC00,IV);
 		
-		hash = hash(output);
-		if(block == 0)			
-			hash[1] ^= contentID;
-		
-		if(!Arrays.equals(hash, h0)){			
-			System.out.println("checksum failed");
-			System.out.println(Util.ByteArrayToString(hash));
-			System.out.println(Util.ByteArrayToString(h0));
-			throw new IllegalArgumentException("checksumfail");			
+		byte[] real_h0_hash = HashUtil.hashSHA1(output);
+		byte[] expected_h0_hash = Arrays.copyOfRange(hashes,H0_start,H0_start + 20);
+
+		if(!Arrays.equals(real_h0_hash,expected_h0_hash)){			
+			System.out.println("h0 checksum failed");
+			System.out.println("real hash    :" + Util.ByteArrayToString(real_h0_hash));
+			System.out.println("expected hash:" + Util.ByteArrayToString(expected_h0_hash));
+			System.exit(2);
+			throw new IllegalArgumentException("h0 checksumfail");			
 		}else{
-			//System.out.println("checksum right!");
+			//System.out.println("h0 checksum right!");
 		}
+		
+		if ((block % 16) == 0){
+    		byte[] expected_h1_hash = Arrays.copyOfRange(hashes,H1_start,H1_start + 20);
+     		byte[] real_h1_hash = HashUtil.hashSHA1(Arrays.copyOfRange(hashes,H0_start,H0_start + (16*20)));
+     		//System.out.println("Using h1 for :" + Util.ByteArrayToString(Arrays.copyOfRange(hashes,H0_start,H0_start + (16*20))));
+     		if(!Arrays.equals(expected_h1_hash, real_h1_hash)){            
+                System.out.println("h1 checksum failed");
+                System.out.println("real hash    :" + Util.ByteArrayToString(real_h1_hash));
+                System.out.println("expected hash:" + Util.ByteArrayToString(expected_h1_hash));
+                System.exit(2);
+                throw new IllegalArgumentException("h1 checksumfail");         
+            }else{
+                //System.out.println("h1 checksum right!");
+            }
+		}
+		
+		if ((block % 256) == 0){
+            byte[] expected_h2_hash = Arrays.copyOfRange(hashes,H2_start,H2_start + 20);
+            byte[] real_h2_hash = HashUtil.hashSHA1(Arrays.copyOfRange(hashes,H1_start,H1_start + (16*20)));
+            
+            if(!Arrays.equals(expected_h2_hash, real_h2_hash)){            
+                System.out.println("h2 checksum failed");
+                System.out.println("real hash    :" + Util.ByteArrayToString(real_h2_hash));
+                System.out.println("expected hash:" + Util.ByteArrayToString(expected_h2_hash));
+                System.exit(2);
+                throw new IllegalArgumentException("h2 checksumfail");
+                
+            }else{
+                //System.out.println("h2 checksum right!");
+            }
+        }
+		
+		if ((block % 4096) == 0){
+            byte[] expected_h3_hash = Arrays.copyOfRange(h3_hashes,H3_start,H3_start + 20);
+            byte[] real_h3_hash = HashUtil.hashSHA1(Arrays.copyOfRange(hashes,H2_start,H2_start + (16*20)));
+            
+            if(!Arrays.equals(expected_h3_hash, real_h3_hash)){            
+                System.out.println("h3 checksum failed");
+                System.out.println("real hash    :" + Util.ByteArrayToString(real_h3_hash));
+                System.out.println("expected hash:" + Util.ByteArrayToString(expected_h3_hash));
+                System.exit(2);
+                throw new IllegalArgumentException("h3 checksumfail");         
+            }else{
+                //System.out.println("h3 checksum right!");
+            }
+        }
+ 		
 		return output;
 	}
-	
-	public static byte[] hash(byte[] hashThis) {
-	    try {
-	      byte[] hash = new byte[20];
-	      MessageDigest md = MessageDigest.getInstance("SHA-1");
-	      hash = md.digest(hashThis);
-	      return hash;
-	    } catch (NoSuchAlgorithmException nsae) {
-	      System.err.println("SHA-1 algorithm is not available...");
-	      System.exit(2);
-	    }
-	    return null;
-	  }
-	
-	
-	public void decryptFile(InputStream inputStream, OutputStream outputStream,FEntry toDownload) throws IOException{		 
+
+	public boolean decryptFile(InputStream inputStream, OutputStream outputStream,FEntry toDownload) throws IOException{
 		int BLOCKSIZE = 0x8000;		
 		long dlFileLength = toDownload.getFileLength();
 	    if(dlFileLength > (dlFileLength/BLOCKSIZE)*BLOCKSIZE){
 	    	dlFileLength = ((dlFileLength/BLOCKSIZE)*BLOCKSIZE) +BLOCKSIZE;	    	
-	    }		
+	    }
 	
         byte[] IV = new byte[16];
         IV[1] = (byte)toDownload.getContentID();
@@ -176,41 +213,72 @@ public class Decryption {
         	progressListener.setTotal(toDownload.getFileLength());
         	progressListener.resetCurrent();
         }
+        
+        
+        MessageDigest sha1 = null;
+        try {
+            sha1 = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        
         do{ 
-        		inBlockBuffer = getChunkFromStream(inputStream,blockBuffer,overflow,BLOCKSIZE);
-        		if(first){
-        			first = false;        			
-        		}else{
-        			IV = null;
-        		}
-        		
-        		byte[] output = decryptFileChunk(blockBuffer,BLOCKSIZE,IV);
-             	
-             	if((wrote + inBlockBuffer) > toDownload.getFileLength()){             		
-             		inBlockBuffer = (int) (toDownload.getFileLength()- wrote);             		
-             	}
-             	 if(progressListener != null){
-             		progressListener.addCurrent(inBlockBuffer);
-             	 }
-             	wrote += inBlockBuffer;
-        		outputStream.write(output, 0, inBlockBuffer);
+    		inBlockBuffer = Util.getChunkFromStream(inputStream,blockBuffer,overflow,BLOCKSIZE);
+    		if(first){
+    			first = false;        			
+    		}else{
+    			IV = null;
+    		}
+    		
+    		byte[] output = decryptFileChunk(blockBuffer,BLOCKSIZE,IV);
+    		
+    		if(sha1 != null){
+    		    sha1.update(output);
+    		}
+         	
+         	if((wrote + inBlockBuffer) > toDownload.getFileLength()){             		
+         		inBlockBuffer = (int) (toDownload.getFileLength()- wrote);             		
+         	}
+         	 if(progressListener != null){
+         		progressListener.addCurrent(inBlockBuffer);
+         	 }
+         	wrote += inBlockBuffer;
+    		outputStream.write(output, 0, inBlockBuffer);
         }while(inBlockBuffer == BLOCKSIZE);
-
+        
+        byte[] hash = sha1.digest();
+        byte[] real_hash = toDownload.getHash();
+        
+        boolean result = true;
+        if(!Arrays.equals(hash, real_hash)){           
+            Logger.messageBox("Checksum fail for: " + toDownload.getFileName() + " =(. Content " + String.format("%08X.app", toDownload.getContentID()) + " likely is broken. Please re-download it!");
+            System.out.println(Util.ByteArrayToString(hash));
+            System.out.println(Util.ByteArrayToString(real_hash));
+            System.exit(-1);
+            //throw new IllegalArgumentException("Checksum fail for: " + toDownload.getFileName());
+        }else{
+            Logger.log("Checksum okay for: " + toDownload.getFileName());
+        }
+        
         outputStream.close();
         inputStream.close();
+        return result;
 	}
-	public void decryptFileHash(InputStream inputStream, OutputStream outputStream,FEntry toDownload) throws IOException{
+	public boolean decryptFileHash(InputStream inputStream, OutputStream outputStream,FEntry toDownload,byte[] h3) throws IOException{
 		int BLOCKSIZE = 0x10000;
 		int HASHBLOCKSIZE = 0xFC00;
 		
 		long writeSize = HASHBLOCKSIZE;		
-		long block = (toDownload.getFileOffset() / HASHBLOCKSIZE) & 0xF;		
-		long soffset = toDownload.getFileOffset() - (toDownload.getFileOffset() / HASHBLOCKSIZE * HASHBLOCKSIZE);	
-		long size =  toDownload.getFileLength();
+		long block = (toDownload.getFileOffset() / HASHBLOCKSIZE);	
 		
+		long soffset = toDownload.getFileOffset() - (toDownload.getFileOffset() / HASHBLOCKSIZE * HASHBLOCKSIZE);	
+		
+		long size =  toDownload.getFileLength();
+	
 		if( soffset+size > writeSize )
 			writeSize = writeSize - soffset;
-	    
+		
+		
 	    byte[] encryptedBlockBuffer = new byte[BLOCKSIZE];
 	    ByteArrayBuffer overflow = new ByteArrayBuffer(BLOCKSIZE);
 	
@@ -222,14 +290,14 @@ public class Decryption {
         	progressListener.resetCurrent();
         }
     	do{        	
-    		inBlockBuffer = getChunkFromStream(inputStream,encryptedBlockBuffer,overflow,BLOCKSIZE);
+    		inBlockBuffer = Util.getChunkFromStream(inputStream,encryptedBlockBuffer,overflow,BLOCKSIZE);
     		if(progressListener != null){            	
             	progressListener.addCurrent(inBlockBuffer);
             }
 			if( writeSize > size )
 				writeSize = size;
 			
-			byte[] output = decryptFileChunkHash(encryptedBlockBuffer, BLOCKSIZE, (int) block,toDownload.getContentID());
+			byte[] output = decryptFileChunkHash(encryptedBlockBuffer, (int) block,toDownload.getContentID(),h3);
 	     	
 	     	if((wrote + writeSize) > toDownload.getFileLength()){             		
 	     		writeSize = (int) (toDownload.getFileLength()- wrote);
@@ -238,9 +306,7 @@ public class Decryption {
 			outputStream.write(output, (int)(0+soffset), (int)writeSize);
 			wrote +=writeSize;
 			
-			block++;
-			if( block >= 16 )
-					block = 0;
+			block++;			
 			
 			if( soffset > 0)
 			{
@@ -251,63 +317,54 @@ public class Decryption {
 		
 		outputStream.close();
 		inputStream.close();
+		return true;
 		
 	}
+	
+	
+	public byte[] decryptAsByte(FEntry fileEntry,String outputPath) throws IOException {
+        InputStream input = new FileInputStream(fileEntry.getContentPath());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        
+        decryptStream(input,bos,fileEntry);
+        
+        byte[] result = bos.toByteArray();
+        bos.close();
+        return result;
+    }
 	
 	public void decrypt(FEntry fileEntry,String outputPath) throws IOException {
-		String [] path = fileEntry.getFullPath().split("/");
-		boolean decryptWithHash = false;
-		if(!path[1].equals("code") && fileEntry.isExtractWithHash()){
-			decryptWithHash = true;
-		}
-		
-		long fileOffset = fileEntry.getFileOffset();
-		if(decryptWithHash){
-			int BLOCKSIZE = 0x10000;
-			int HASHBLOCKSIZE = 0xFC00;
-			fileOffset = ((fileEntry.getFileOffset() / HASHBLOCKSIZE) * BLOCKSIZE);
-		}		
-		
-	    
 	    InputStream input = new FileInputStream(fileEntry.getContentPath());
 	    FileOutputStream outputStream = new FileOutputStream(outputPath + "/" + fileEntry.getFileName());
-	    
-	    input.skip(fileOffset);
-	    
-	    if(!decryptWithHash){
-	    	decryptFile(input, outputStream, fileEntry);
-	    }else{
-	    	decryptFileHash(input, outputStream, fileEntry);
-	    }		
+	    decryptStream(input,outputStream,fileEntry);
 	}
-
 	
-	private int getChunkFromStream(InputStream inputStream,byte[] output, ByteArrayBuffer overflowbuffer,int BLOCKSIZE) throws IOException {
-		int bytesRead = -1;
-    	int inBlockBuffer = 0;
-    	do{
-    		bytesRead = inputStream.read(overflowbuffer.buffer,overflowbuffer.getLengthOfDataInBuffer(),overflowbuffer.getSpaceLeft());    		
-    		if(bytesRead <= 0) break;
-
-    		overflowbuffer.addLengthOfDataInBuffer(bytesRead);
-	    	
-	    	if(inBlockBuffer + overflowbuffer.getLengthOfDataInBuffer() > BLOCKSIZE){
-	    		int tooMuch = (inBlockBuffer + bytesRead) - BLOCKSIZE;
-	    		int toRead = BLOCKSIZE - inBlockBuffer;
-	    		
-	    		System.arraycopy(overflowbuffer.buffer, 0, output, inBlockBuffer, toRead);
-	    		inBlockBuffer += toRead;
-	    		
-	    		System.arraycopy(overflowbuffer.buffer, toRead, overflowbuffer.buffer, 0, tooMuch);
-	    		overflowbuffer.setLengthOfDataInBuffer(tooMuch);
-	    	}else{     
-	    		System.arraycopy(overflowbuffer.buffer, 0, output, inBlockBuffer, overflowbuffer.getLengthOfDataInBuffer()); 
-	    		inBlockBuffer +=overflowbuffer.getLengthOfDataInBuffer();
-	    		overflowbuffer.resetLengthOfDataInBuffer();
-	    	}
-    	}while(inBlockBuffer != BLOCKSIZE);
-    	return inBlockBuffer;
-	}
+	public void decryptStream(InputStream input,OutputStream outputStream,FEntry fileEntry) throws IOException {
+        String [] path = fileEntry.getFullPath().split("/");
+        boolean decryptWithHash = false;
+        if(/*!path[1].equals("code") && */fileEntry.isExtractWithHash()){
+            decryptWithHash = true;
+        }
+        long fileOffset = fileEntry.getFileOffset();
+        if(decryptWithHash){
+            int BLOCKSIZE = 0x10000;
+            int HASHBLOCKSIZE = 0xFC00;
+            fileOffset = ((fileEntry.getFileOffset() / HASHBLOCKSIZE) * BLOCKSIZE);
+        }       
+        
+        input.skip(fileOffset);
+        
+        boolean result = false;
+        if(!decryptWithHash){
+            result = decryptFile(input, outputStream, fileEntry);
+        }else{
+            byte[] h3 = fileEntry.getH3();
+            result = decryptFileHash(input, outputStream, fileEntry,h3);
+        }
+        if(!result){
+            
+        }
+    }
 	
 	private Progress progressListener = null;
 
@@ -315,6 +372,93 @@ public class Decryption {
 		this.progressListener = progressOfFile;
 		
 	}
+
+	/* Checking encrypted files is just a pain. Maybe I'll add it later ~
+    public byte[] getHashEncryptedFile(File f, List<FEntry> list) throws IOException {
+        if(list == null || list.size() > 1){
+            return new byte[0x14];
+        }else{
+        }
+        FEntry fentry = list.get(0);
+        String [] path = fentry.getFullPath().split("/");
+        boolean decryptWithHash = false;
+        if(path.length < 2) return new byte[0x14];
+        if(!path[1].equals("code") && fentry.isExtractWithHash()){
+            decryptWithHash = true;
+        }
+        
+        long fileOffset = fentry.getFileOffset();
+        if(decryptWithHash){
+            int BLOCKSIZE = 0x10000;
+            int HASHBLOCKSIZE = 0xFC00;
+            fileOffset = ((fentry.getFileOffset() / HASHBLOCKSIZE) * BLOCKSIZE);
+        }
+        
+        InputStream input = new FileInputStream(fentry.getContentPath());
+        
+        input.skip(fileOffset);
+        
+        byte[] result = new byte[0x14];
+        if(!decryptWithHash){
+            result = getHashEncryptedFileNormal(input, fentry);
+        }else{
+            result = getHashEncryptedFileHashed(input, fentry);
+        }
+        return Arrays.copyOfRange(result,0,0x14);
+    }
+
+    private byte[] getHashEncryptedFileHashed(InputStream input, FEntry fileEntry) {
+        return fileEntry.getHash(); //Ups.
+    }
+
+    private byte[] getHashEncryptedFileNormal(InputStream inputStream, FEntry fileEntry) throws IOException {
+        int BLOCKSIZE = 0x8000;
+
+        byte[] IV = new byte[16];
+        IV[1] = (byte)fileEntry.getContentID();
+     
+        byte[] blockBuffer = new byte[BLOCKSIZE];
+        
+        int inBlockBuffer;  
+        
+        boolean first = true;
+        ByteArrayBuffer overflow = new ByteArrayBuffer(BLOCKSIZE);
+      
+        MessageDigest sha1 = null;
+        try {
+            sha1 = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        
+        long proccessed = 0;
+        do{ 
+            inBlockBuffer = Util.getChunkFromStream(inputStream,blockBuffer,overflow,BLOCKSIZE);
+            if(first){
+                first = false;                  
+            }else{
+                IV = null;
+            }
+            
+            byte[] output = decryptFileChunk(blockBuffer,BLOCKSIZE,IV);
+            
+            if(sha1 != null){
+                sha1.update(output);
+            }else{
+                break;
+            }
+            proccessed += inBlockBuffer;
+        }while(proccessed < fileEntry.getFileLength() && inBlockBuffer == BLOCKSIZE);
+        
+        byte[] hash = new byte[0x14];
+        if(sha1 != null){
+            hash = sha1.digest();
+        }
+        
+        inputStream.close();
+        return hash;
+    }
+    */
 	
 	
 }

@@ -1,10 +1,6 @@
 package de.mas.jnustool;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,24 +12,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import de.mas.jnustool.gui.NUSGUI;
 import de.mas.jnustool.gui.UpdateChooser;
-import de.mas.jnustool.util.Downloader;
 import de.mas.jnustool.util.NUSTitleInformation;
+import de.mas.jnustool.util.Settings;
+import de.mas.jnustool.util.UpdateListManager;
 import de.mas.jnustool.util.Util;
 
 public class Starter {
-
-	private static String updateCSVPath;
-	
 	public static void main(String[] args) {
-	    Logger.log("JNUSTool 0.0.8c - alpha - by Maschell");
+	    Logger.log("JNUSTool 0.2 - by Maschell");
 		Logger.log("");
 		try {
-			readConfig();
+			Settings.readConfig();
 		} catch (IOException e) {
 			System.err.println("Error while reading config! Needs to be:");
 			System.err.println("DOWNLOAD URL BASE");
 			System.err.println("COMMONKEY");
 			System.err.println("updateinfos.csv");
+			System.err.println("UPDATELIST VERSION URL");
+			System.err.println("UPDATELIST URL PATTERN");
 			return;
 		}
 
@@ -87,8 +83,20 @@ public class Starter {
 		        m.setVisible(true);			
 			}
 		}else{
-			for(final NUSTitleInformation nus : getTitleID()){
-				
+		    List<NUSTitleInformation> updatelist = UpdateListManager.getTitles();
+		    List<NUSTitleInformation> result = new ArrayList<>();
+            if(updatelist != null){
+    		    UpdateChooser.createAndShowGUI(updatelist,result);
+    		    synchronized (result) {             
+                    try {
+                        result.wait();
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
+			for(final NUSTitleInformation nus : result){				
 				final long tID = nus.getTitleID();
 				new Thread(new Runnable() {
 					
@@ -101,103 +109,6 @@ public class Starter {
 			}			
 		}
 	}
-	
-
-
-	private static List<NUSTitleInformation> getTitleID() {
-		List<NUSTitleInformation> updatelist = readUpdateCSV();
-		List<NUSTitleInformation> result = null;
-		if(updatelist != null){
-			result = new ArrayList<>();
-			UpdateChooser.createAndShowGUI(updatelist,result);
-			synchronized (result) {			    
-		    	try {
-					result.wait();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}else{
-			Logger.messageBox("Updatefile is missing or not in config?");
-			System.exit(2);
-		}
-		return result;
-	}
-
-
-
-	@SuppressWarnings("resource")
-	private static List<NUSTitleInformation> readUpdateCSV() {
-		if(updateCSVPath == null) return null;
-		BufferedReader in = null;
-		List<NUSTitleInformation> list = new ArrayList<>();
-		try {
-			in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(updateCSVPath)), "UTF-8"));
-			String line;
-		    while((line = in.readLine()) != null){
-		    	String[] infos = line.split(";");
-		    	if(infos.length != 8) {
-		    		Logger.messageBox("Updatelist is broken!");
-		    		Logger.log("Updatelist is broken!");
-		    		return null;
-		    	}
-		    	long titleID = Util.StringToLong(infos[0].replace("-", ""));
-		    	int region = Integer.parseInt(infos[1]);
-		    	String  content_platform = infos[2];
-		    	String  company_code = infos[3];
-		    	String  product_code = infos[4];
-		    	String  ID6 = infos[5];
-		    	String  longnameEN = infos[6];
-		    	String[]  versions = infos[7].split(",");		    	
-		    	NUSTitleInformation info = new NUSTitleInformation(titleID, longnameEN, ID6, product_code, content_platform, company_code, region,versions);
-		    	
-		    	list.add(info);
-		    }
-		    in.close();
-		} catch (IOException | NumberFormatException e) {
-			try {
-				if(in != null)in.close();
-			} catch (IOException e1) {
-			}
-			Logger.messageBox("Updatelist is broken or missing");
-			Logger.log("Updatelist is broken!");
-			return null;
-		}
-		return list;		
-	}
-
-
-
-	public static void readConfig() throws IOException {
-		BufferedReader in = new BufferedReader(new FileReader(new File("config")));		
-		Downloader.URL_BASE =  in.readLine();	
-		String commonkey = in.readLine();
-		if(commonkey.length() != 32){
-			Logger.messageBox("CommonKey length is wrong");
-			Logger.log("Commonkey length is wrong");
-			System.exit(1);
-		}
-		Util.commonKey =  Util.hexStringToByteArray(commonkey);
-		updateCSVPath =  in.readLine();
-		in.close();
-		
-	}
-
-	public static boolean deleteFolder(File element) {
-	    if (element.isDirectory()) {	    	
-	        for (File sub : element.listFiles()) {
-	        	if(sub.isFile()){
-	        		return false;
-	        	}
-	        }
-	        for (File sub : element.listFiles()) {
-	        	if(!deleteFolder(sub)) return false;
-	        }	        
-	    }
-	    element.delete();	    
-	    return true;
-	}
 
 	public static void downloadMeta(List<NUSTitleInformation> output_, final Progress totalProgress) {
 		ForkJoinPool pool = ForkJoinPool.commonPool();
@@ -209,10 +120,9 @@ public class Starter {
 				@Override
 				public Boolean call() throws Exception {
 					NUSTitle nusa  = new NUSTitle(tID,nus.getSelectedVersion(),Util.ByteArrayToString(nus.getKey()));
-					Progress childProgress = new Progress();
-					
+					Progress childProgress = new Progress();					
 					totalProgress.add(childProgress);
-					deleteFolder(new File(nusa.getLongNameFolder() + "/updates"));
+					Util.deleteFolder(new File(nusa.getLongNameFolder() + "/updates"));
 					nusa.setTargetPath(nusa.getLongNameFolder());
 					nusa.decryptFEntries(nusa.getFst().getMetaFolder(),childProgress);					
 					return true;
@@ -302,6 +212,7 @@ public class Starter {
 				e.printStackTrace();
 			}
 		}
+		
 		
 	}
 

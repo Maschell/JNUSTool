@@ -1,5 +1,6 @@
 package de.mas.jnustool;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,6 +95,18 @@ public class FST {
 		int[] LEntry = new int[16];
 		int[] Entry = new int[16];
 		
+		/*
+		for(int i = 0;i<totalContentCount;i++){
+		    int my_offset = 0x20 + (i* 0x20);
+		    int address = Util.getIntFromBytes(decrypteddata, my_offset+ 0) ;		   
+		    long parentid = Util.getLongFromBytes(decrypteddata, my_offset+ 8) ;
+		    int groupid = Util.getIntFromBytes(decrypteddata, my_offset+ 16) ;
+		    int size = Util.getIntFromBytes(decrypteddata, my_offset+ 4);
+		    byte hashmode = decrypteddata[my_offset+ 20];
+		    System.out.print(String.format("Content    %02X: ", i) + " offset " + String.format("%08X", address)+ "    size " + String.format("%08X", size) +" ");
+		    System.out.println(String.format("parent(?) %016X: ", parentid) + " groupid " + String.format("%08X", groupid)+ "    hashmode " + String.format("%01X", hashmode) +" ");
+	    }*/
+		
 		for(int i = 0;i<this.totalEntries;i++){
 			boolean dir = false;
 			boolean in_nus_title = true;
@@ -146,13 +159,17 @@ public class FST {
 			//grabbing flags
 			offset+=4;
 			int flags = Util.getShortFromBytes(decrypteddata, offset);
-			if((flags & FEntry.EXTRACT_WITH_HASH_FLAG) > 0) extract_withHash = true;
+			//if((flags & FEntry.EXTRACT_WITH_HASH_FLAG) > 0) extract_withHash = true;
+			
 			if((flags & FEntry.CHANGE_OFFSET_FLAG) == 0) fileOffset <<=5;
 			
 			//grabbing contentid
 			offset+=2;
 			contentID = Util.getShortFromBytes(decrypteddata, offset) ;
-		
+			
+			if((tmd.contents[contentID].type & 0x2003) == 0x2003){
+			    extract_withHash = true;
+			}
 			
 			//remember total size
 			this.totalContentSize += fileLength;
@@ -162,6 +179,7 @@ public class FST {
 			
 			List<String> pathList = new ArrayList<>();
 			//getting the full path of entry
+			
 			if(dir)
 			{
 				dirEntries++;
@@ -171,7 +189,20 @@ public class FST {
 				{
 					break;
 				}
+				
+				/*
+				if(in_nus_title){
+	                System.out.println("Dirname:      " + filename);
+	                System.out.println("ID:           " + i);
+	                System.out.println("ParentOffset: " + parentOffset);
+	                System.out.println("  NextOffset: " + nextOffset);
+	            }*/				
 			}else{
+			    /*
+			    if(in_nus_title){
+                    System.out.println("FILE   :      " + filename);
+                    System.out.println("ID:           " + i);
+                }*/
 				StringBuilder sb = new StringBuilder();
 				int k = 0;
 				int nameoffoff,nameoff_entrypath;
@@ -195,9 +226,9 @@ public class FST {
 				}
 				path = sb.toString();
 			}
-			
+			byte[] hash = tmd.contents[contentID].SHA2;
 			//add this to the List!
-			FEntry tmp = new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this);
+			FEntry tmp = new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this,hash,tmd.contents[contentID]);
 			fileEntries.add(tmp);
 			if(filename.equals("meta.xml")){
 				metaFENtry = tmp;
@@ -205,7 +236,7 @@ public class FST {
 			if(metafolder){
 				metaFolder.add(tmp);
 			}
-			//Logger.log(fileEntries.get(i));
+			//Logger.log(tmd.contents[contentID].ID + " " + filename);
 		}
 		
 	}	

@@ -31,7 +31,7 @@ public class Downloader {
 		URL url = new URL(URL);
 		String [] path = toDownload.getFullPath().split("/");
 		boolean decryptWithHash = false;
-		if(!path[1].equals("code") && toDownload.isExtractWithHash()){
+		if(/*!path[1].equals("code") &&*/ toDownload.isExtractWithHash()){
 			decryptWithHash = true;
 		}
 		HttpURLConnection connection =(HttpURLConnection) url.openConnection();	
@@ -64,7 +64,8 @@ public class Downloader {
     	if(!decryptWithHash){
 	        decryption.decryptFile(input, outputStream, toDownload);
 	    }else{
-	    	 decryption.decryptFileHash(input, outputStream, toDownload);
+	        byte[] h3 = toDownload.getH3();
+	    	decryption.decryptFileHash(input, outputStream, toDownload,h3);
 	    }    		
         connection.disconnect();
         if(asByteArray){
@@ -138,7 +139,7 @@ public class Downloader {
 		return downloadFileToByteArray(URL);
 	}
 	
-	private byte[] downloadFileToByteArray(String fileURL) throws IOException {
+	public byte[] downloadFileToByteArray(String fileURL) throws IOException {
 		
 		int BUFFER_SIZE = 0x800;		
 		URL url = new URL(fileURL);
@@ -172,6 +173,40 @@ public class Downloader {
 	    return file;
 	}
 	
+public byte[] downloadHTTPSFileToByteArray(String fileURL) throws IOException {
+   
+        int BUFFER_SIZE = 0x800;        
+        URL url = new URL(fileURL);
+        HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+        int responseCode = httpConn.getResponseCode();
+        
+        // always check HTTP response code first
+        byte[] file = null;
+        
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            int contentLength = httpConn.getContentLength();
+            
+            file = new byte[contentLength];
+            // always check HTTP response code first
+            
+            InputStream inputStream = httpConn.getInputStream();
+    
+            int bytesRead = -1;
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int filePostion = 0;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                System.arraycopy(buffer, 0, file, filePostion,bytesRead);
+                filePostion+=bytesRead;
+                
+            }
+            inputStream.close();
+        }else{
+            Logger.log("File not found: " + fileURL);
+        }
+        httpConn.disconnect();
+        return file;
+    }
+	
 	
 	
 	public byte[] downloadTicketToByteArray(long titleID) throws IOException {
@@ -187,6 +222,11 @@ public class Downloader {
 		String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID) + ".h3";
 		downloadFile(URL, String.format("%08X", contentID) +".h3",tmpPath,progress);
 	}
+	
+	public byte[] downloadContentH3AsByte(long titleID, int contentID) throws IOException {
+        String URL = URL_BASE + "/" + String.format("%016X", titleID) +  "/" + String.format("%08X", contentID) + ".h3";
+        return downloadFileToByteArray(URL);
+    }
 	
 	
 }

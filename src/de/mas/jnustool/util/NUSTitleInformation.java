@@ -41,6 +41,19 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 		}
 	}
 
+	public void addVersion(int version){
+	    this.versions.add(version);
+	}
+	public void addVersion(String version){
+	    addVersion(Integer.parseInt(version));
+    }
+	
+	public int getVersion(){
+	    if(!versions.isEmpty()){
+	        return versions.get(versions.size()-1);
+	    }
+        return 0;	   
+	}
 	public NUSTitleInformation() {
 		// TODO Auto-generated constructor stub
 	}
@@ -122,8 +135,15 @@ public class NUSTitleInformation implements Comparable<NUSTitleInformation>, Ser
 	@Override
 	public String toString(){
 		String result =  getTitleIDAsString() + ";" + region +";" + getContent_platform() + ";" + getCompany_code() + ";"+ getProduct_code()+ ";" + getID6() + ";" + getLongnameEN();
+		boolean first = true;
 		for(Integer i :versions){
-			result += ";" + i;
+		    if(first){
+		        result += ";" + i;
+		        first = false;
+		    }else{
+		        result += "," + i;
+		    }
+			
 		}
 		//result += ";" + getSelectedVersion();
 		return result;

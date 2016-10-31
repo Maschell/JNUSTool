@@ -205,7 +205,6 @@ public class TitleMetaData {
 	 * @throws IOException
 	 */	
 	public void downloadContents(Progress progress) throws IOException{
-		
 		String tmpPath = getContentPath();
 		File f = new File(tmpPath);
 		if(!f.exists())f.mkdir();

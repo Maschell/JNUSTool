@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -35,6 +36,9 @@ public class Util {
 	public static int getIntFromBytes(byte[] input,int offset){		
 		return ByteBuffer.wrap(Arrays.copyOfRange(input,offset, offset+4)).getInt();
 	}
+	public static long getLongFromBytes(byte[] input,int offset){        
+        return ByteBuffer.wrap(Arrays.copyOfRange(input,offset, offset+8)).getLong();
+    }
 	public static long getIntAsLongFromBytes(byte[] input,int offset){
 		long result = 0 ;		
 		if((int)input[offset]+128 > 0 && (int)input[offset]+128  < 128){			
@@ -63,6 +67,21 @@ public class Util {
 			return 0L;
 		}
 	}
+	
+	public static boolean deleteFolder(File element) {
+        if (element.isDirectory()) {            
+            for (File sub : element.listFiles()) {
+                if(sub.isFile()){
+                    return false;
+                }
+            }
+            for (File sub : element.listFiles()) {
+                if(!deleteFolder(sub)) return false;
+            }           
+        }
+        element.delete();       
+        return true;
+    }
 	
 	public static void createSubfolder(String folder){
 		
@@ -136,5 +155,41 @@ public class Util {
     public static byte[] getDefaultCert() throws IOException {
         byte [] ticket = Downloader.getInstance().downloadTicketToByteArray(0x000500101000400AL); //Downloading cetk from OSv10
         return Arrays.copyOfRange(ticket, 0x350, 0x350+0x300);
+    }
+    
+    public static int getChunkFromStream(InputStream inputStream,byte[] output, ByteArrayBuffer overflowbuffer,int BLOCKSIZE) throws IOException {
+        int bytesRead = -1;
+        int inBlockBuffer = 0;
+        do{
+            bytesRead = inputStream.read(overflowbuffer.buffer,overflowbuffer.getLengthOfDataInBuffer(),overflowbuffer.getSpaceLeft());         
+            if(bytesRead <= 0) break;
+
+            overflowbuffer.addLengthOfDataInBuffer(bytesRead);
+            
+            if(inBlockBuffer + overflowbuffer.getLengthOfDataInBuffer() > BLOCKSIZE){
+                int tooMuch = (inBlockBuffer + bytesRead) - BLOCKSIZE;
+                int toRead = BLOCKSIZE - inBlockBuffer;
+                
+                System.arraycopy(overflowbuffer.buffer, 0, output, inBlockBuffer, toRead);
+                inBlockBuffer += toRead;
+                
+                System.arraycopy(overflowbuffer.buffer, toRead, overflowbuffer.buffer, 0, tooMuch);
+                overflowbuffer.setLengthOfDataInBuffer(tooMuch);
+            }else{     
+                System.arraycopy(overflowbuffer.buffer, 0, output, inBlockBuffer, overflowbuffer.getLengthOfDataInBuffer()); 
+                inBlockBuffer +=overflowbuffer.getLengthOfDataInBuffer();
+                overflowbuffer.resetLengthOfDataInBuffer();
+            }
+        }while(inBlockBuffer != BLOCKSIZE);
+        return inBlockBuffer;
+    }
+    
+    public static long align(long input, int alignment){
+        long newSize = (input/alignment);
+        if(newSize * alignment != input){
+            newSize++;
+        }
+        newSize = newSize * alignment;        
+        return newSize;        
     }
 }
