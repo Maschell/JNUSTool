@@ -200,6 +200,14 @@ public class TitleMetaData {
 	}
 	
 	/**
+     * Checks of the title is a DLC
+     * @return true if its an DLC
+     */
+    public boolean isDLC() {
+        return ((titleID & 0x5000C00000000L)  == 0x5000C00000000L) && !isUpdate();
+    }
+	
+	/**
 	 * Downloads all content files (encrypted) 
 	 * @param progress: A progress object can be used to get informations of the progress. Will be ignored when null is used. 
 	 * @throws IOException

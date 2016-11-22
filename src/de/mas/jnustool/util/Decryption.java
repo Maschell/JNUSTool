@@ -14,6 +14,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.concurrent.SynchronousQueue;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -22,6 +23,9 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.omg.Messaging.SyncScopeHelper;
+
+import de.mas.jnustool.Content;
 import de.mas.jnustool.FEntry;
 import de.mas.jnustool.Logger;
 import de.mas.jnustool.Progress;
@@ -138,7 +142,7 @@ public class Decryption {
 			System.out.println("real hash    :" + Util.ByteArrayToString(real_h0_hash));
 			System.out.println("expected hash:" + Util.ByteArrayToString(expected_h0_hash));
 			System.exit(2);
-			throw new IllegalArgumentException("h0 checksumfail");			
+			//throw new IllegalArgumentException("h0 checksumfail");			
 		}else{
 			//System.out.println("h0 checksum right!");
 		}
@@ -146,13 +150,13 @@ public class Decryption {
 		if ((block % 16) == 0){
     		byte[] expected_h1_hash = Arrays.copyOfRange(hashes,H1_start,H1_start + 20);
      		byte[] real_h1_hash = HashUtil.hashSHA1(Arrays.copyOfRange(hashes,H0_start,H0_start + (16*20)));
-     		//System.out.println("Using h1 for :" + Util.ByteArrayToString(Arrays.copyOfRange(hashes,H0_start,H0_start + (16*20))));
+     		
      		if(!Arrays.equals(expected_h1_hash, real_h1_hash)){            
                 System.out.println("h1 checksum failed");
                 System.out.println("real hash    :" + Util.ByteArrayToString(real_h1_hash));
                 System.out.println("expected hash:" + Util.ByteArrayToString(expected_h1_hash));
                 System.exit(2);
-                throw new IllegalArgumentException("h1 checksumfail");         
+                //throw new IllegalArgumentException("h1 checksumfail");         
             }else{
                 //System.out.println("h1 checksum right!");
             }
@@ -161,13 +165,13 @@ public class Decryption {
 		if ((block % 256) == 0){
             byte[] expected_h2_hash = Arrays.copyOfRange(hashes,H2_start,H2_start + 20);
             byte[] real_h2_hash = HashUtil.hashSHA1(Arrays.copyOfRange(hashes,H1_start,H1_start + (16*20)));
-            
+           
             if(!Arrays.equals(expected_h2_hash, real_h2_hash)){            
                 System.out.println("h2 checksum failed");
                 System.out.println("real hash    :" + Util.ByteArrayToString(real_h2_hash));
                 System.out.println("expected hash:" + Util.ByteArrayToString(expected_h2_hash));
                 System.exit(2);
-                throw new IllegalArgumentException("h2 checksumfail");
+                //throw new IllegalArgumentException("h2 checksumfail");
                 
             }else{
                 //System.out.println("h2 checksum right!");
@@ -177,13 +181,13 @@ public class Decryption {
 		if ((block % 4096) == 0){
             byte[] expected_h3_hash = Arrays.copyOfRange(h3_hashes,H3_start,H3_start + 20);
             byte[] real_h3_hash = HashUtil.hashSHA1(Arrays.copyOfRange(hashes,H2_start,H2_start + (16*20)));
-            
+
             if(!Arrays.equals(expected_h3_hash, real_h3_hash)){            
                 System.out.println("h3 checksum failed");
                 System.out.println("real hash    :" + Util.ByteArrayToString(real_h3_hash));
                 System.out.println("expected hash:" + Util.ByteArrayToString(expected_h3_hash));
                 System.exit(2);
-                throw new IllegalArgumentException("h3 checksumfail");         
+                //throw new IllegalArgumentException("h3 checksumfail");         
             }else{
                 //System.out.println("h3 checksum right!");
             }
@@ -321,6 +325,59 @@ public class Decryption {
 		
 	}
 	
+	public boolean decryptContentHash(InputStream inputStream, OutputStream outputStream,Content content,byte[] h3) throws IOException{
+        int BLOCKSIZE = 0x10000;
+        int HASHBLOCKSIZE = 0xFC00;
+        
+        long writeSize = HASHBLOCKSIZE;     
+        long block = 0;  
+        
+        long soffset = 0;   
+        
+        long size =  content.getSize()/0x10000*0xfc00;
+    
+        if( soffset+size > writeSize )
+            writeSize = writeSize - soffset;
+        
+        
+        byte[] encryptedBlockBuffer = new byte[BLOCKSIZE];
+        ByteArrayBuffer overflow = new ByteArrayBuffer(BLOCKSIZE);
+    
+        long wrote = 0;
+        int inBlockBuffer;
+        
+        do{         
+            inBlockBuffer = Util.getChunkFromStream(inputStream,encryptedBlockBuffer,overflow,BLOCKSIZE);
+            if(progressListener != null){               
+                progressListener.addCurrent(inBlockBuffer);
+            }
+            if( writeSize > size )
+                writeSize = size;
+            
+            byte[] output = decryptFileChunkHash(encryptedBlockBuffer, (int) block,content.getContentID(),h3);
+            
+            if((wrote + writeSize) > size){                   
+                writeSize = (int) (size - wrote);
+            }
+                     
+            outputStream.write(output, (int)(0+soffset), (int)writeSize);
+            wrote +=writeSize;
+            
+            block++; 
+            
+            if( soffset > 0)
+            {
+                writeSize = HASHBLOCKSIZE;
+                soffset = 0;
+            }   
+        }while(wrote < size && (inBlockBuffer == BLOCKSIZE));
+        
+        outputStream.close();
+        inputStream.close();
+        return true;
+        
+    }
+	
 	
 	public byte[] decryptAsByte(FEntry fileEntry,String outputPath) throws IOException {
         InputStream input = new FileInputStream(fileEntry.getContentPath());
@@ -333,14 +390,31 @@ public class Decryption {
         return result;
     }
 	
+	public byte[] decryptContent(FEntry fileEntry,String outputPath) throws IOException {
+        InputStream input = new FileInputStream(fileEntry.getContentPath());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        
+        decryptStream(input,bos,fileEntry);
+        
+        byte[] result = bos.toByteArray();
+        bos.close();
+        return result;
+    }
+    
+	
 	public void decrypt(FEntry fileEntry,String outputPath) throws IOException {
+	    if(fileEntry.isDir()){
+            new File(outputPath + "/" + fileEntry.getFileName()).mkdir();
+            return;
+        }
 	    InputStream input = new FileInputStream(fileEntry.getContentPath());
+	    
 	    FileOutputStream outputStream = new FileOutputStream(outputPath + "/" + fileEntry.getFileName());
 	    decryptStream(input,outputStream,fileEntry);
 	}
 	
 	public void decryptStream(InputStream input,OutputStream outputStream,FEntry fileEntry) throws IOException {
-        String [] path = fileEntry.getFullPath().split("/");
+        //String [] path = fileEntry.getFullPath().split("/");
         boolean decryptWithHash = false;
         if(/*!path[1].equals("code") && */fileEntry.isExtractWithHash()){
             decryptWithHash = true;
@@ -351,7 +425,6 @@ public class Decryption {
             int HASHBLOCKSIZE = 0xFC00;
             fileOffset = ((fileEntry.getFileOffset() / HASHBLOCKSIZE) * BLOCKSIZE);
         }       
-        
         input.skip(fileOffset);
         
         boolean result = false;

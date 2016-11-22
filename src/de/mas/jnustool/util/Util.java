@@ -36,9 +36,19 @@ public class Util {
 	public static int getIntFromBytes(byte[] input,int offset){		
 		return ByteBuffer.wrap(Arrays.copyOfRange(input,offset, offset+4)).getInt();
 	}
+	
+	public static long getUnsingedIntFromBytes(byte[] input,int offset){
+	    ByteBuffer buffer = ByteBuffer.allocate(8);
+	    buffer.position(4);
+	    buffer.put(Arrays.copyOfRange(input,offset, offset+4));
+	    
+        return buffer.getLong(0);
+    }
+	
 	public static long getLongFromBytes(byte[] input,int offset){        
         return ByteBuffer.wrap(Arrays.copyOfRange(input,offset, offset+8)).getLong();
     }
+	
 	public static long getIntAsLongFromBytes(byte[] input,int offset){
 		long result = 0 ;		
 		if((int)input[offset]+128 > 0 && (int)input[offset]+128  < 128){			

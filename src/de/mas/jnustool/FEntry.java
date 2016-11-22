@@ -35,9 +35,18 @@ public class FEntry implements IHasName{
 	
 	private Content content = null;
 
+	private short flags = 0;
 	
-	public FEntry(String path, String filename, int contentID,int NUScontentID, long fileOffset, long fileLength, boolean dir,
-			boolean in_nus_title, boolean extract_withHash, List<String> pathList,FST fst,byte[] hash,Content content) {
+	public short getFlags() {
+        return flags;
+    }
+
+    public void setFlags(short flags) {
+        this.flags = flags;
+    }
+
+    public FEntry(String path, String filename, int contentID,int NUScontentID, long fileOffset, long fileLength, boolean dir,
+			boolean in_nus_title, boolean extract_withHash, List<String> pathList,FST fst,byte[] hash,Content content,short flags) {
 		setPath(path);
 		setFileName(filename);
 		setContentID(contentID);
@@ -49,6 +58,7 @@ public class FEntry implements IHasName{
 		setNUScontentID(NUScontentID);
 		setPathList(pathList);
 		setHash(hash);
+		setFlags(flags);
 		this.fst = fst;
 	}
 
@@ -120,12 +130,14 @@ public class FEntry implements IHasName{
 		this.fileLength = fileLength;
 	}
 	
-	@Override
-	public String toString(){		
-		return getFullPath() + " Content ID:" + contentID + " Size: " + fileLength +"MB  Offset: " + fileOffset; 
-	}
+	
 
-	public int getNUScontentID() {
+	@Override
+    public String toString() {
+	    return getFullPath() + " Content ID:" + contentID + " Size: " + fileLength/1024.0/1024.0 +"MB  Offset: " + fileOffset; 
+    }
+
+    public int getNUScontentID() {
 		return NUScontentID;
 	}
 

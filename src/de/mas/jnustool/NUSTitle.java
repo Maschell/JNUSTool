@@ -3,7 +3,6 @@ package de.mas.jnustool;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -177,19 +176,23 @@ public class NUSTitle {
 			decryption.init(ticket.getDecryptedKey(),0);
 			byte[] decryptedFST = decryption.decrypt(encryptedFST);
 			
+			
+            /*FileOutputStream  fw = new FileOutputStream ("fst123.dec");
+            fw.write(decryptedFST);
+            fw.close();*/
+			
 			try{
 				fst = new FST(decryptedFST,tmd);
 			}catch(Exception e){
 				e.printStackTrace();
 			}
+			
 			tmd.setNUSTitle(this);
 			
-			FileOutputStream  fw = new FileOutputStream ("fst.dec");
-			fw.write(decryptedFST);
-			fw.close();
-			
 			setTargetPath(String.format("%016X", getTitleID()));			
-			setLongNameFolder(String.format("%016X", getTitleID()));			
+			setLongNameFolder(String.format("%016X", getTitleID()));
+			
+			
 			
 			if(fst != null && fst.metaFENtry != null){
 				byte[] metaxml = fst.metaFENtry.getAsByteArray();
@@ -201,7 +204,8 @@ public class NUSTitle {
 							//String folder = nusinfo.getLongnameEN().replaceAll("[^\\x20-\\x7E]", "") + " [" + nusinfo.getID6() + "]";
 							String folder = nusinfo.getLongnameEN() + " [" + nusinfo.getID6() + "]";
 							String subfolder = "";
-							if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;				
+							if(tmd.isUpdate()) subfolder = "/" + "updates" + "/" + "v" + tmd.titleVersion;	
+							if(tmd.isDLC()) subfolder = "/" + String.format("aoc%016X", titleId);   
 							setTargetPath(folder + subfolder);
 							setLongNameFolder(folder);
 						}
@@ -210,16 +214,23 @@ public class NUSTitle {
 					}
 				}
 			}
-						
+			
+			
+            
 	        if(Settings.downloadContent){
 				downloadEncryptedFiles(null);
 	        }
-			
-			Logger.log("Total Size of Content Files: " + ((int)((getTotalContentSize()/1024.0/1024.0)*100))/100.0 +" MB");
-			if(fst != null)Logger.log("Total Size of Decrypted Files: " + ((int)((fst.getTotalContentSizeInNUS()/1024.0/1024.0)*100))/100.0 +" MB");
-			if(fst != null)Logger.log("Entries: " + fst.getTotalEntries());
-			if(fst != null)Logger.log("Files: " + fst.getFileCount());
-			if(fst != null)Logger.log("Files in NUSTitle: " + fst.getFileCountInNUS());
+                	       Logger.log("");
+                           Logger.log("Title              \t\t: " + getLongNameFolder());
+                           Logger.log("TitleID            \t\t: " + String.format("%016X", tmd.titleID));
+                           Logger.log("Version            \t\t: " + String.format("%016X", tmd.version));
+                           Logger.log("Encrypted Key   \t\t: " + Util.ByteArrayToString(ticket.getEncryptedKey()));
+                           Logger.log("Decrypted Key   \t\t: " + Util.ByteArrayToString(ticket.getDecryptedKey()));
+			               Logger.log("Total Size of Content Files\t: " + ((int)((getTotalContentSize()/1024.0/1024.0)*100))/100.0 +" MB");
+			if(fst != null)Logger.log("Total Size of Decrypted Files\t: " + ((int)((fst.getTotalContentSizeInNUS()/1024.0/1024.0)*100))/100.0 +" MB");
+			if(fst != null)Logger.log("Entries            \t\t: " + fst.getTotalEntries());
+			if(fst != null)Logger.log("Files              \t\t: " + fst.getFileCount());
+			if(fst != null)Logger.log("Files in NUS-Title      \t: " + fst.getFileCountInNUS());
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -371,7 +382,7 @@ public class NUSTitle {
 		ForkJoinPool pool = new ForkJoinPool(25);
 		List<FEntryDownloader> dlList = new ArrayList<>();
 		for(FEntry f : list){
-			if(!f.isDir() &&  f.isInNUSTitle()){                    			
+			if(f.isInNUSTitle()){                    			
 				dlList.add(new FEntryDownloader(f,progress));
 			}
 		}
@@ -405,4 +416,12 @@ public class NUSTitle {
 	public void setVersion(int version) {
 		this.version = version;
 	}
+	
+	/* Just for testing ~
+	public void decryptContent(){
+	    System.out.println(tmd.getContentPath() + "/" + "00000004.app");
+        FileInputStream in = new FileInputStream(new File(tmd.getContentPath() + "/" + "00000004.app"));
+        FileOutputStream out = new FileOutputStream(new File(tmd.getContentPath() + "/" + "00000004.dec"));
+        decryption.decryptContentHash(in,out,tmd.contents[0x4],Files.readAllBytes(new File(tmd.getContentPath() + "/" + "00000004.h3").toPath()));
+	}*/
 }

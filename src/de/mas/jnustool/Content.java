@@ -85,4 +85,18 @@ public class Content {
 	public String toString(){		
 		return "ID: " + ID +" index: " + index + " type: " + type + " size: " + size + " SHA2: " + Util.ByteArrayToString(SHA2); 
 	}
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public int getContentID() {
+        return ID;
+    }
+	
+	
 }

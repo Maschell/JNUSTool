@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,7 +40,7 @@ public class FST {
 		 String contentfolder = "";
 		 Directory<FEntry> curContent = contentDirectory;
 		 for(FEntry f : getFileEntries()){			 
-			 if(!f.isDir() && f.isInNUSTitle()){
+			 if(f.isInNUSTitle()){
 				 contentfolder = String.format("%08X",tmd.contents[f.getContentID()].ID);
 				 
 				 if(!contentDirectory.containsFolder(contentfolder)){
@@ -80,7 +82,7 @@ public class FST {
 			 }
 		 }
 	}
-
+	//private Map<Content,List<FEntry>> contentmap = new HashMap<>();
 	private void parse(byte[] decrypteddata, TitleMetaData tmd) throws IOException {
 		
 		if(!Arrays.equals(Arrays.copyOfRange(decrypteddata, 0, 3), new byte[]{0x46,0x53,0x54})){
@@ -97,6 +99,7 @@ public class FST {
 		
 		/*
 		for(int i = 0;i<totalContentCount;i++){
+		    contentmap.put(tmd.contents[i],new ArrayList<FEntry>());
 		    int my_offset = 0x20 + (i* 0x20);
 		    int address = Util.getIntFromBytes(decrypteddata, my_offset+ 0) ;		   
 		    long parentid = Util.getLongFromBytes(decrypteddata, my_offset+ 8) ;
@@ -104,7 +107,8 @@ public class FST {
 		    int size = Util.getIntFromBytes(decrypteddata, my_offset+ 4);
 		    byte hashmode = decrypteddata[my_offset+ 20];
 		    System.out.print(String.format("Content    %02X: ", i) + " offset " + String.format("%08X", address)+ "    size " + String.format("%08X", size) +" ");
-		    System.out.println(String.format("parent(?) %016X: ", parentid) + " groupid " + String.format("%08X", groupid)+ "    hashmode " + String.format("%01X", hashmode) +" ");
+		    System.out.print(String.format("parent(?) %016X: ", parentid) + " groupid " + String.format("%08X", groupid)+ "    hashmode " + String.format("%01X", hashmode) +" ");
+		    System.out.println(String.format("encrypted content size: "+ String.format("%08X", tmd.contents[i].size)));
 	    }*/
 		
 		for(int i = 0;i<this.totalEntries;i++){
@@ -131,7 +135,7 @@ public class FST {
 			int offset = base_offset + i*0x10;
 			
 			//getting the type
-			type = (int) decrypteddata[offset]+128;			
+			type = (int) decrypteddata[offset]+128;
 			if((type & FEntry.DIR_FLAG) == 1) dir = true;			
 			if((type & FEntry.NOT_IN_NUSTITLE_FLAG) == 0 ) in_nus_title = false;
 			
@@ -148,9 +152,11 @@ public class FST {
 			
 			//getting offsets. save in two ways
 			offset+=4;
-			fileOffset = (long) Util.getIntFromBytes(decrypteddata, offset);
+			fileOffset = Util.getUnsingedIntFromBytes(decrypteddata, offset);
+				
 			offset+=4;
-			fileLength = Util.getIntAsLongFromBytes(decrypteddata, offset);			
+			fileLength = Util.getUnsingedIntFromBytes(decrypteddata, offset);			
+			
 			@SuppressWarnings("unused")
 			int parentOffset = (int) fileOffset;
 			int nextOffset = (int) fileLength;
@@ -190,14 +196,14 @@ public class FST {
 					break;
 				}
 				
-				/*
-				if(in_nus_title){
+				
+				/*if(in_nus_title){
 	                System.out.println("Dirname:      " + filename);
 	                System.out.println("ID:           " + i);
 	                System.out.println("ParentOffset: " + parentOffset);
 	                System.out.println("  NextOffset: " + nextOffset);
-	            }*/				
-			}else{
+	            }*/
+			}//else{
 			    /*
 			    if(in_nus_title){
                     System.out.println("FILE   :      " + filename);
@@ -207,7 +213,11 @@ public class FST {
 				int k = 0;
 				int nameoffoff,nameoff_entrypath;
 				
-				for( j=0; j<level; ++j )
+				int startlevel =  level;
+				if(dir){
+				    startlevel = level -1;
+				}
+				for( j=0; j<startlevel; ++j )
 				{
 					nameoffoff = Util.getIntFromBytes(decrypteddata,base_offset+Entry[j]*0x10);
 					k=0;
@@ -222,13 +232,17 @@ public class FST {
 					}					
 						
 					sb.append(tmpname);
-					sb.append("/");		
+					sb.append("/");
 				}
 				path = sb.toString();
-			}
+			//}
+			
+			
 			byte[] hash = tmd.contents[contentID].SHA2;
 			//add this to the List!
-			FEntry tmp = new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this,hash,tmd.contents[contentID]);
+			
+			FEntry tmp = new FEntry(path,filename,contentID,tmd.contents[contentID].ID,fileOffset,fileLength,dir,in_nus_title,extract_withHash,pathList,this,hash,tmd.contents[contentID],(short) flags);
+			
 			fileEntries.add(tmp);
 			if(filename.equals("meta.xml")){
 				metaFENtry = tmp;
@@ -236,8 +250,19 @@ public class FST {
 			if(metafolder){
 				metaFolder.add(tmp);
 			}
+			//contentmap.get(tmd.contents[contentID]).add(tmp);
 			//Logger.log(tmd.contents[contentID].ID + " " + filename);
 		}
+		/*
+		for(Content cur_content : contentmap.keySet()){
+		    System.out.println("################");
+		    System.out.println(cur_content);
+		    //System.out.println(String.format("%08X", cur_content.ID));
+		    System.out.println("--------------");
+		    for(FEntry cur_entry : contentmap.get(cur_content)){
+		        System.out.println(cur_entry);
+		    }
+		}*/
 		
 	}	
 	
@@ -327,7 +352,7 @@ public class FST {
 		return sb.toString();
 	}
 
-	public Directory<FEntry> getFSTDirectory() {
+	public Directory<FEntry> getFSTDirectory() {	   
 		return FSTDirectory;
 	}
 	
@@ -349,7 +374,8 @@ public class FST {
             filepath = "/" + filepath;
         }
         Pattern p = Pattern.compile(filepath);
-        for(FEntry f : fileEntries){  
+        for(FEntry f : fileEntries){ 
+           
             Matcher m = p.matcher(f.getFullPath());
             if(m.matches()){
                 newList.add(f);
