@@ -403,10 +403,7 @@ public class Decryption {
     
 	
 	public void decrypt(FEntry fileEntry,String outputPath) throws IOException {
-	    if(fileEntry.isDir()){
-            new File(outputPath + "/" + fileEntry.getFileName()).mkdir();
-            return;
-        }
+	   
 	    InputStream input = new FileInputStream(fileEntry.getContentPath());
 	    
 	    FileOutputStream outputStream = new FileOutputStream(outputPath + "/" + fileEntry.getFileName());

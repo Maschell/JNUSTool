@@ -207,7 +207,12 @@ public class FEntry implements IHasName{
 	
 	
 	public void downloadAndDecrypt(Progress progress) {
+	    if(isDir()){
+	        Util.createSubfolder(getDownloadPath() + "/" + getFileName());
+            return;
+        }
 		Util.createSubfolder(fst.getTmd().getNUSTitle().getTargetPath() + getFullPath());
+		
 		
 		if(localValidDecryptedFileFound()){
 		    if(progress != null){
