@@ -1,7 +1,7 @@
 package de.mas.jnustool.util;
 
 public class ByteArrayBuffer {
-	public byte[] buffer;
+	private byte[] buffer;
 	int lengthOfDataInBuffer;
 	
 	public ByteArrayBuffer(int length){
@@ -27,6 +27,10 @@ public class ByteArrayBuffer {
 	public void resetLengthOfDataInBuffer() {
 		setLengthOfDataInBuffer(0);
 	}
+
+    public byte[] getBuffer() {
+        return this.buffer;
+    }
 	
 	
 

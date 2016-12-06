@@ -58,7 +58,7 @@ public class FST {
 					//Content
 					if(curContent.containsFolder(s)){    				
 						curContent = curContent.getFolder(s);
-					}else{    				
+					}else{
 						Directory<FEntry> newDir = new Directory<FEntry>(s);
 						curContent.addFolder(newDir);
 						curContent = newDir;
@@ -76,7 +76,9 @@ public class FST {
 						current = newDir;
 					}
 					if(i==f.getPathList().size()){
-						current.addFile(f);
+					    if(!f.isDir()){
+					        current.addFile(f);
+					    }
 					}
 				 }
 			 }

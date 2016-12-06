@@ -62,22 +62,28 @@ public class HashUtil {
         byte[] blockBuffer = new byte[bufferSize];
         ByteArrayBuffer overflow = new ByteArrayBuffer(bufferSize);
         do{
-            if(cur_position + bufferSize > inputSize){
-                int expectedSize = (int) (inputSize - cur_position);
-                ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-                
+            if(cur_position + bufferSize > target_size){               
+                int expectedSize = (int) (target_size - cur_position);
+                ByteBuffer buffer = ByteBuffer.allocate(expectedSize);
+                buffer.position(0);
                 inBlockBufferRead = Util.getChunkFromStream(in,blockBuffer,overflow,expectedSize);
                 buffer.put(Arrays.copyOfRange(blockBuffer, 0, inBlockBufferRead));
                 blockBuffer = buffer.array();
-                inBlockBufferRead = bufferSize;
+                inBlockBufferRead = blockBuffer.length;
             }else{
                 int expectedSize = bufferSize;
                 inBlockBufferRead = Util.getChunkFromStream(in,blockBuffer,overflow,expectedSize);
             }
+            if(inBlockBufferRead == 0){
+                inBlockBufferRead = (int) (target_size - cur_position);
+                blockBuffer = new byte[inBlockBufferRead];
+            }
+            if(inBlockBufferRead <= 0) break;
+
             digest.update(blockBuffer, 0, inBlockBufferRead);
             cur_position += inBlockBufferRead;
             
-        }while(cur_position < target_size && (inBlockBufferRead == bufferSize));
+        }while(cur_position < target_size);
        
         in.close();
 

@@ -218,7 +218,6 @@ public class Decryption {
         	progressListener.resetCurrent();
         }
         
-        
         MessageDigest sha1 = null;
         try {
             sha1 = MessageDigest.getInstance("SHA1");
@@ -236,9 +235,6 @@ public class Decryption {
     		
     		byte[] output = decryptFileChunk(blockBuffer,BLOCKSIZE,IV);
     		
-    		if(sha1 != null){
-    		    sha1.update(output);
-    		}
          	
          	if((wrote + inBlockBuffer) > toDownload.getFileLength()){             		
          		inBlockBuffer = (int) (toDownload.getFileLength()- wrote);             		
@@ -247,17 +243,26 @@ public class Decryption {
          		progressListener.addCurrent(inBlockBuffer);
          	 }
          	wrote += inBlockBuffer;
-    		outputStream.write(output, 0, inBlockBuffer);
+    		outputStream.write(output,0,inBlockBuffer);
+    		if(sha1 != null){
+                sha1.update(output,0,inBlockBuffer);
+            }
         }while(inBlockBuffer == BLOCKSIZE);
+        
+        long missingInHash =  toDownload.getContent().getSize() - wrote;
+        
+        if(missingInHash > 0){
+            sha1.update(new byte[(int) missingInHash]);
+        }
         
         byte[] hash = sha1.digest();
         byte[] real_hash = toDownload.getHash();
         
         boolean result = true;
         if(!Arrays.equals(hash, real_hash)){           
-            Logger.messageBox("Checksum fail for: " + toDownload.getFileName() + " =(. Content " + String.format("%08X.app", toDownload.getContentID()) + " likely is broken. Please re-download it!");
-            System.out.println(Util.ByteArrayToString(hash));
-            System.out.println(Util.ByteArrayToString(real_hash));
+            Logger.messageBox("Checksum fail for: " + toDownload.getFileName() + " =(. Content " + String.format("%08X.app", toDownload.getContentID()) + " likely is broken. Please re-download it!");System.out.println(Util.ByteArrayToString(hash));
+            System.out.println("Expected hash:  " +Util.ByteArrayToString(hash));
+            System.out.println("Real hash    :  " +Util.ByteArrayToString(real_hash));
             System.exit(-1);
             //throw new IllegalArgumentException("Checksum fail for: " + toDownload.getFileName());
         }else{

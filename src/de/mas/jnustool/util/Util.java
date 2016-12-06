@@ -170,23 +170,31 @@ public class Util {
     public static int getChunkFromStream(InputStream inputStream,byte[] output, ByteArrayBuffer overflowbuffer,int BLOCKSIZE) throws IOException {
         int bytesRead = -1;
         int inBlockBuffer = 0;
+        byte[] overflowbuf = overflowbuffer.getBuffer();
         do{
-            bytesRead = inputStream.read(overflowbuffer.buffer,overflowbuffer.getLengthOfDataInBuffer(),overflowbuffer.getSpaceLeft());         
-            if(bytesRead <= 0) break;
+            bytesRead = inputStream.read(overflowbuf,overflowbuffer.getLengthOfDataInBuffer(),overflowbuffer.getSpaceLeft());
 
+            if(bytesRead <= 0){
+                if(overflowbuffer.getLengthOfDataInBuffer() > 0){
+                    System.arraycopy(overflowbuf, 0, output, 0, overflowbuffer.getLengthOfDataInBuffer());
+                    inBlockBuffer = overflowbuffer.getLengthOfDataInBuffer();
+                }
+                break;
+            }
+            
             overflowbuffer.addLengthOfDataInBuffer(bytesRead);
             
             if(inBlockBuffer + overflowbuffer.getLengthOfDataInBuffer() > BLOCKSIZE){
                 int tooMuch = (inBlockBuffer + bytesRead) - BLOCKSIZE;
                 int toRead = BLOCKSIZE - inBlockBuffer;
                 
-                System.arraycopy(overflowbuffer.buffer, 0, output, inBlockBuffer, toRead);
+                System.arraycopy(overflowbuf, 0, output, inBlockBuffer, toRead);
                 inBlockBuffer += toRead;
                 
-                System.arraycopy(overflowbuffer.buffer, toRead, overflowbuffer.buffer, 0, tooMuch);
+                System.arraycopy(overflowbuf, toRead, overflowbuf, 0, tooMuch);
                 overflowbuffer.setLengthOfDataInBuffer(tooMuch);
             }else{     
-                System.arraycopy(overflowbuffer.buffer, 0, output, inBlockBuffer, overflowbuffer.getLengthOfDataInBuffer()); 
+                System.arraycopy(overflowbuf, 0, output, inBlockBuffer, overflowbuffer.getLengthOfDataInBuffer()); 
                 inBlockBuffer +=overflowbuffer.getLengthOfDataInBuffer();
                 overflowbuffer.resetLengthOfDataInBuffer();
             }
@@ -199,7 +207,7 @@ public class Util {
         if(newSize * alignment != input){
             newSize++;
         }
-        newSize = newSize * alignment;        
+        newSize = newSize * alignment;
         return newSize;        
     }
 }

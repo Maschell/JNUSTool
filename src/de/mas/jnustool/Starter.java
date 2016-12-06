@@ -19,7 +19,7 @@ import de.mas.jnustool.util.Util;
 
 public class Starter {
 	public static void main(String[] args) {
-	    Logger.log("JNUSTool 0.3a - by Maschell");
+	    Logger.log("JNUSTool 0.3b - by Maschell");
 		Logger.log("");
 		try {
 			Settings.readConfig();

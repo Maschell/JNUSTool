@@ -59,6 +59,7 @@ public class FEntry implements IHasName{
 		setPathList(pathList);
 		setHash(hash);
 		setFlags(flags);
+		setContent(content);
 		this.fst = fst;
 	}
 
@@ -170,7 +171,7 @@ public class FEntry implements IHasName{
                     if(!path[1].equals("code") && isExtractWithHash()){
                         fileHash = Arrays.copyOfRange(getHash(),0,0x14); //Little cheat at already hash files.
                     }else{
-                        fileHash = HashUtil.hashSHA1(f, 0x8000);
+                        fileHash = HashUtil.hashSHA1(f,(int) getContent().size);
                     }
                     
                     byte[] expectedHash = Arrays.copyOfRange(getHash(), 0, 0x14);
@@ -318,6 +319,7 @@ public class FEntry implements IHasName{
     }
 
     public void setHash(byte[] hash) {
+        
         this.hash = hash;
     }
 
