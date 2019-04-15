@@ -54,3 +54,7 @@ updatetitles.csv
 jar/tmp*
 src/de/mas/jnustool/gui/UpdateChooserSpecial.java
 src/de/mas/jnustool/StarterSpecial.java
+/target/
+.settings/
+.project
+.classpath
