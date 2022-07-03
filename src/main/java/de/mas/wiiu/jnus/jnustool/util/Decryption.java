@@ -23,8 +23,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.omg.Messaging.SyncScopeHelper;
-
 import de.mas.wiiu.jnus.jnustool.Content;
 import de.mas.wiiu.jnus.jnustool.FEntry;
 import de.mas.wiiu.jnus.jnustool.Logger;
